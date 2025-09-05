@@ -15,7 +15,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         //登录时传给前端token->请求时携带token->判断token是否有效->映射到对应用户id，并全局绑定
         registry.addInterceptor(new SaInterceptor(handler -> {
             SaRouter.match("/**")
-                    .notMatch("/login", "/register")
+                    .notMatch("/login", "/register","/test/**")
                     .check(StpUtil::checkLogin);
         })).addPathPatterns("/**");
     }
