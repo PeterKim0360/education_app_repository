@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.ProvinceInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.ProvinceInfo">
+            <result property="provinceId" column="province_id" />
+            <result property="provinceName" column="province_name" />
+            <result property="schoolId" column="school_id" />
+            <result property="schoolScore" column="school_score" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        province_id,province_name,school_id,school_score
+    </sql>
+</mapper>

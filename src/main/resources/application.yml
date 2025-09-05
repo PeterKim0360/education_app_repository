@@ -1,12 +1,13 @@
+
 spring:
   application:
     name: education-app
   #数据库改成自己的
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
+    url: jdbc:mysql://localhost:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true
     username: root
-    password: "050311"
+    password: "sct"
 
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
@@ -32,3 +33,5 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: false
+
+

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.SchoolInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.SchoolInfo">
+            <id property="schoolId" column="school_id" />
+            <result property="schoolName" column="school_name" />
+            <result property="simpleAddress" column="simple_address" />
+            <result property="detailedAddress" column="detailed_address" />
+            <result property="emblemUrl" column="emblem_url" />
+            <result property="schoolProfile" column="school_profile" />
+            <result property="is985" column="is_985" />
+            <result property="is211" column="is_211" />
+            <result property="schoolRank" column="school_rank" />
+            <result property="provinceId" column="province_id" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        school_id,school_name,simple_address,detailed_address,emblem_url,school_profile,
+        is_985,is_211,school_rank,province_id
+    </sql>
+</mapper>
