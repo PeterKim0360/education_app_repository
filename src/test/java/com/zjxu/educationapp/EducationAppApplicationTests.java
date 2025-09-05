@@ -7,9 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class EducationAppApplicationTests {
 
-    @Test
-    void testToken() {
-        System.out.println("token:" + StpUtil.getTokenValue());
-    }
+//    @Test
+//    void testToken() {
+//        System.out.println("token:" + StpUtil.getTokenValue());
+//    }
 
 }

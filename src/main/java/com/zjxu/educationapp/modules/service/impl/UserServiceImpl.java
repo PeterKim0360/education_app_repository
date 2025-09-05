@@ -12,6 +12,9 @@ import com.zjxu.educationapp.modules.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Kim-Peter
  * @description 针对表【user】的数据库操作Service实现
@@ -39,8 +42,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         }
         //登录成功保存用户id
         StpUtil.login(userEntity.getId());
+
+        Map<String,Object> result=new HashMap<>(2);
+        result.put("token",StpUtil.getTokenValue());
+        result.put("userId",userEntity.getId());
         log.info("token:{}",StpUtil.getTokenValue());
-        return Result.ok(StpUtil.getTokenValue());
+        return Result.ok(result);
     }
 }
 

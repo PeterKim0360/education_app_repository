@@ -29,4 +29,9 @@ public class GlobalExceptionHandler {
             return Result.error(ErrorCode.UNKNOWN_LOGIN_ERROR);
         }
     }
+
+    @ExceptionHandler
+    public Result handleAllException(Exception e){
+        return Result.error(500,e.getMessage());
+    }
 }
