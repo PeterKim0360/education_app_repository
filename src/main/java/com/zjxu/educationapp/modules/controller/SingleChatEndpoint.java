@@ -1,10 +1,12 @@
-package com.zjxu.educationapp.common.utils;
+package com.zjxu.educationapp.modules.controller;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.zjxu.educationapp.common.config.WebSocketConfigurator;
 import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.constant.SecurityConstant;
+import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -48,7 +50,7 @@ public class SingleChatEndpoint {
         1.进入对话框发送两个请求：websocket请求和获取历史消息http请求
         2.websocket采用双向连接，toId->fromId 表示接收人对发送人建立会话连接，反之同理
          */
-        //TODO 先做接收人在线的情况
+        //TODO 未做历史消息持久化模块
         Object authError = session.getUserProperties().get(SecurityConstant.AUTH_ERROR);
         if (authError != null) {
             //token认证失败
@@ -63,6 +65,34 @@ public class SingleChatEndpoint {
         onlineUserSession.put(sessionKey, session);
     }
 
+    //NOTE 此注解规范了参数有String:message和Session:session，因此如果需要传入自定义JSON对象时，只能手动解析message
+    @OnMessage
+    public void onMessage(@PathParam("toUserId") Long toUserId,String message, Session session) {
+        System.out.println("接收到消息：" + message);
+
+        try {
+            sendRealTimeMessage(message, session);
+        } catch (IOException e) {
+            log.info("发送消息失败，onMessage()");
+        }
+    }
+
+    @OnClose
+    public void onClose(@PathParam("toUserId") Long toUserId) {
+        //此时自动关闭连接
+        onlineUserSession.remove(sessionKey);
+    }
+
+    @OnError
+    public void onError(Session session, Throwable e) {
+        log.error("websocket连接异常：{}",e.getMessage());
+        try {
+            session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, e.getMessage()));
+        } catch (IOException IOe) {
+            log.error("websocket会话关闭失败：{}",IOe.getMessage());
+        }
+    }
+
     private void sendAuthErrorAndClose(Session session, Object authError) {
         try {
             session.getBasicRemote().sendText(JSONObject.toJSONString(Result.error(ErrorCode.UNKNOWN_LOGIN_ERROR)));
@@ -74,6 +104,18 @@ public class SingleChatEndpoint {
             } catch (IOException ex) {
                 log.error("websocket会话关闭失败");
             }
+        }
+    }
+
+    private void sendRealTimeMessage(String message, Session session) throws IOException {
+        if(onlineUserSession.containsKey(reverseSessionKey)){
+            //在线，实时发送消息
+            log.info("在线");
+            Session reverseSession = onlineUserSession.get(reverseSessionKey);
+            reverseSession.getBasicRemote().sendText(message);
+        }else{
+            log.info("不在线");
+            //不在线，将历史消息持久化
         }
     }
 
@@ -95,33 +137,4 @@ public class SingleChatEndpoint {
         CloseReason.CloseCodes.BAD_GATEWAY             // 1014 - 错误网关
         CloseReason.CloseCodes.TLS_HANDSHAKE_FAILURE   // 1015 - TLS握手失败
      */
-    @OnClose
-    public void onClose(@PathParam("toUserId") Long toUserId) {
-        onlineUserSession.remove(sessionKey);
-    }
-
-    //NOTE 此注解规范了参数有String:message和Session:session，因此如果需要传入自定义JSON对象时，只能手动解析message
-    @OnMessage
-    public void onMessage(@PathParam("toUserId") Long toUserId,String message, Session session) {
-        System.out.println("接收到消息：" + message);
-
-        try {
-            sendRealTimeMessage(message, session);
-        } catch (IOException e) {
-            log.info("发送消息失败，onMessage()");
-        }
-    }
-
-    private void sendRealTimeMessage(String message, Session session) throws IOException {
-        if(onlineUserSession.containsKey(reverseSessionKey)){
-            //在线
-            log.info("在线");
-            Session reverseSession = onlineUserSession.get(reverseSessionKey);
-            reverseSession.getBasicRemote().sendText(message);
-        }else{
-            log.info("不在线");
-            //不在线
-        }
-    }
-
 }

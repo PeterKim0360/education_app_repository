@@ -11,6 +11,7 @@ import com.zjxu.educationapp.modules.service.UserService;
 import com.zjxu.educationapp.modules.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         implements UserService {
 
     @Override
-    public Result login(LoginDTO loginDTO) {
+    public Result login(@RequestBody LoginDTO loginDTO) {
         UserEntity userEntity = getOne(new LambdaQueryWrapper<>(UserEntity.class).eq(UserEntity::getPhone, loginDTO.getPhone()));
         //1.判断用户是否存在
         if (userEntity == null) {
