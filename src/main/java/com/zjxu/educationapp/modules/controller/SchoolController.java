@@ -17,7 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 学校
@@ -126,6 +128,7 @@ public class SchoolController {
                 }
             }
         }
+        schoolInfos=schoolInfos.stream().sorted(Comparator.comparingInt(SchoolInfo::getSchoolRank)).collect(Collectors.toList());
         IPage<SchoolInfo> infoIPage = MpListPageUtil.getPage(schoolInfos, page, size);
         IPage<SchoolSimpleVO> simpleVOIPage = infoIPage.convert(schoolInfo -> {
             SchoolSimpleVO schoolSimpleVO = new SchoolSimpleVO();

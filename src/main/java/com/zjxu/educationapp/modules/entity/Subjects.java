@@ -7,25 +7,20 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * 学校图片展示
- * @TableName school_images
+ * 
+ * @TableName subjects
  */
-@TableName(value ="school_images")
+@TableName(value ="subjects")
 @Data
-public class SchoolImages {
+public class Subjects {
     /**
      * 主键
      */
     @TableId(type = IdType.AUTO)
-    private Long imageId;
+    private Integer subjectId;
 
     /**
-     * 关联的学校ID
+     * 学科名称
      */
-    private Long schoolId;
-
-    /**
-     * 校徽
-     */
-    private String imageUrl;
+    private String subjectName;
 }

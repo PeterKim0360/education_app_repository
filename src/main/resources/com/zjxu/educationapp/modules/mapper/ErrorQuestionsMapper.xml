@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.ErrorQuestionsMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.ErrorQuestions">
+            <id property="questionId" column="question_id" />
+            <result property="subjectId" column="subject_id" />
+            <result property="questionText" column="question_text" />
+            <result property="isMastered" column="is_mastered" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        question_id,subject_id,question_text,is_mastered
+    </sql>
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.SubjectsMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.Subjects">
+            <id property="subjectId" column="subject_id" />
+            <result property="subjectName" column="subject_name" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        subject_id,subject_name
+    </sql>
+</mapper>

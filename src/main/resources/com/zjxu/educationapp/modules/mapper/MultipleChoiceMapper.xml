@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.MultipleChoiceMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.MultipleChoice">
+            <id property="questionId" column="question_id" />
+            <result property="options" column="options" />
+            <result property="correctOptions" column="correct_options" />
+            <result property="userAnswer" column="user_answer" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        question_id,options,correct_options,user_answer
+    </sql>
+</mapper>

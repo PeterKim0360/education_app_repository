@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.TrueFalseMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.TrueFalse">
+            <id property="questionId" column="question_id" />
+            <result property="correctResult" column="correct_result" />
+            <result property="userAnswer" column="user_answer" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        question_id,correct_result,user_answer
+    </sql>
+</mapper>

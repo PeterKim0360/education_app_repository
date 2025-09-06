@@ -9,9 +9,9 @@ spring:
   #本地开发数据库改成自己的
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
+    url: jdbc:mysql://localhost:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
     username: root
-    password: "050311"
+    password: "sct"
     #以下是云数据库密码
 #    password: "Root_123"
 
@@ -39,3 +39,7 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: false
+
+dashscope:
+  api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
+
