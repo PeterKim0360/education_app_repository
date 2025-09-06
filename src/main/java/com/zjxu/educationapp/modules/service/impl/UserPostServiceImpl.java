@@ -1,0 +1,94 @@
+package com.zjxu.educationapp.modules.service.impl;
+
+import cn.hutool.core.bean.BeanUtil;
+import com.alibaba.fastjson2.JSONArray;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.entity.UserEntity;
+import com.zjxu.educationapp.modules.entity.UserPostCommentEntity;
+import com.zjxu.educationapp.modules.entity.UserPostEntity;
+import com.zjxu.educationapp.modules.mapper.UserMapper;
+import com.zjxu.educationapp.modules.mapper.UserPostCommentMapper;
+import com.zjxu.educationapp.modules.service.UserPostService;
+import com.zjxu.educationapp.modules.mapper.UserPostMapper;
+import com.zjxu.educationapp.modules.vo.UserPostCommentVO;
+import com.zjxu.educationapp.modules.vo.UserPostVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * @author Kim-Peter
+ * @description 针对表【user_post】的数据库操作Service实现
+ * @createDate 2025-09-05 14:05:35
+ */
+@Service
+public class UserPostServiceImpl extends ServiceImpl<UserPostMapper, UserPostEntity>
+        implements UserPostService {
+    @Autowired
+    private UserPostMapper userPostMapper;
+    @Autowired
+    private UserPostCommentMapper userPostCommentMapper;
+    @Autowired
+    private UserMapper userMapper;
+
+    @Override
+    public Result<List<UserPostVO>> post(Integer page, Integer size) {
+        IPage<UserPostEntity> resPage = new Page<>(page, size);
+        userPostMapper.selectPage(resPage, new LambdaQueryWrapper<UserPostEntity>().orderByDesc(UserPostEntity::getUpdateTime));
+//        等价userPostEntity -> this.getUserPostVO(userPostEntity)
+        List<UserPostVO> resList = resPage.getRecords().stream().map(this::getUserPostVO).toList();
+        return Result.ok(resList);
+    }
+
+    @Override
+    public Result<UserPostVO> postDetail(Integer postId) {
+        UserPostEntity userPostEntity = getOne(new LambdaQueryWrapper<UserPostEntity>().eq(UserPostEntity::getId, postId));
+        if(userPostEntity == null){
+            return Result.error("动态不存在");
+        }
+        return Result.ok(getUserPostVO(userPostEntity));
+    }
+
+    private UserPostVO getUserPostVO(UserPostEntity userPostEntity) {
+        UserPostVO userPostVO = new UserPostVO();
+        Long commentCount = userPostCommentMapper.selectCount(new LambdaQueryWrapper<UserPostCommentEntity>().eq(UserPostCommentEntity::getPostId, userPostEntity.getId()));
+        //忽视重名不同类型属性
+        BeanUtil.copyProperties(userPostEntity, userPostVO, "contentImageUrls");
+        userPostVO.setCommentCount(commentCount.intValue());
+        UserEntity userEntity = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getId, userPostEntity.getUserId()));
+        userPostVO.setAvatarUrl(userEntity.getAvatarUrl());
+        userPostVO.setUserName(userEntity.getUserName());
+        //内容图片可能为空
+        if (userPostEntity.getContentImageUrls() != null) {
+            userPostVO.setContentImageUrls(JSONArraytoList(userPostEntity.getContentImageUrls().toString(), String.class));
+        }
+        return userPostVO;
+    }
+
+    @Override
+    public Result<List<UserPostCommentVO>> postComment(Integer postId, Integer page, Integer size) {
+        IPage<UserPostCommentEntity> resPage = new Page<>(page, size);
+        userPostCommentMapper.selectPage(resPage, new LambdaQueryWrapper<UserPostCommentEntity>().eq(UserPostCommentEntity::getPostId, postId));
+        List<UserPostCommentVO> list = resPage.getRecords().stream().map(userPostCommentEntity -> {
+            UserPostCommentVO userPostCommentVO = BeanUtil.copyProperties(userPostCommentEntity, UserPostCommentVO.class);
+            UserEntity userEntity = userMapper.selectOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getId, userPostCommentEntity.getUserId()));
+            userPostCommentVO.setCommentUserName(userEntity.getUserName());
+            userPostCommentVO.setAvatarUrl(userEntity.getAvatarUrl());
+            return userPostCommentVO;
+        }).toList();
+        return Result.ok(list);
+    }
+
+    private <T> List<T> JSONArraytoList(String json, Class<T> clazz) {
+        return JSONArray.parseArray(json, clazz);
+    }
+}
+
+
+
+

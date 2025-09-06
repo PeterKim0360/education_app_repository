@@ -12,6 +12,8 @@ import com.zjxu.educationapp.modules.service.*;
 import com.zjxu.educationapp.modules.service.impl.QuestionService;
 import com.zjxu.educationapp.modules.vo.ErrorQuestionsVO;
 import com.zjxu.educationapp.modules.vo.QuestionResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 题目接口
+ * 错题接口
  */
+@Tag(name = "错题接口")
 @Slf4j
 @RestController
 @RequestMapping("/api/questions")
@@ -47,6 +50,7 @@ public class QuestionController {
     /**
      * 生成任意主题、题型的题目
       */
+    @Operation(summary = "生成任意主题、题型的题目",description = "传参：questionType,questionStyle;可选：totalCount,pageNum,pageSize")
     @GetMapping("/generate")
     public ResponseEntity<QuestionResult> generateQuestions(
             @RequestParam String questionType,
@@ -63,6 +67,7 @@ public class QuestionController {
     /**
      * 错题分页查询
      */
+    @Operation(summary = "错题分页查询",description = "传参：subjectId;可选：page,size")
     @GetMapping("/error")
     public Result<IPage<ErrorQuestionsVO>> queryErrorQuestions(
             @RequestParam("subjectId") int subjectId,
@@ -161,6 +166,7 @@ public class QuestionController {
     /**
      *错题记载
      */
+    @Operation(summary = "错题记载",description = "传参：errorQuestionDTO")
     @PostMapping("/error/insert")
     public Result ErrorQuestionInsert(@RequestBody ErrorQuestionDTO errorQuestionDTO){
         //TODO

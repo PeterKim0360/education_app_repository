@@ -4,11 +4,7 @@ import com.zjxu.educationapp.common.constant.QuestionShowType;
 import com.zjxu.educationapp.common.utils.AiQuestionParser;
 import com.zjxu.educationapp.common.utils.PageInfo;
 import com.zjxu.educationapp.modules.entity.Question;
-import com.zjxu.educationapp.modules.service.AIGCService;
 import com.zjxu.educationapp.modules.vo.QuestionResult;
-import com.alibaba.dashscope.exception.ApiException;
-import com.alibaba.dashscope.exception.InputRequiredException;
-import com.alibaba.dashscope.exception.NoApiKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 

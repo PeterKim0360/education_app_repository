@@ -10,11 +10,11 @@ public class Result<T> {
     private T data;
 
     public static <T> Result<T> ok(){
-        return build(200,"成功",null);
+        return build(0,"成功",null);
     }
 
     public static <T> Result<T> ok(T data){
-        return build(200,"成功",data);
+        return build(0,"成功",data);
     }
 
     public static <T> Result<T> error(){
@@ -26,6 +26,10 @@ public class Result<T> {
     }
     public static <T> Result<T> error(Integer code,String message){
         return build(code,message,null);
+    }
+
+    public static <T> Result<T> error(String message){
+        return build(201,message,null);
     }
 
     private static <T> Result<T> build(Integer code,String message,T data){

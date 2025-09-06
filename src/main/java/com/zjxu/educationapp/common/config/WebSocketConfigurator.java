@@ -20,7 +20,7 @@ import com.zjxu.educationapp.common.constant.SecurityConstant;
 
 public class WebSocketConfigurator extends ServerEndpointConfig.Configurator {
 
-    /* NOTE 关于拦截websocket请求
+    /* +NOTE 关于拦截websocket请求
     token放在请求头中，第一次握手使用Get请求；
     协议升级：WebSocket握手虽然起始于一个HTTP GET请求，但它是一个协议升级请求（包含 Upgrade: websocket 等头信息）。
     它的目的是将HTTP协议切换到WebSocket协议。

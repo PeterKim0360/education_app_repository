@@ -32,6 +32,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler
     public Result handleAllException(Exception e){
+        e.printStackTrace();
         return Result.error(500,e.getMessage());
     }
 }

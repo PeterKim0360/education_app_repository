@@ -5,45 +5,46 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
+import java.util.Date;
 import lombok.Data;
 
 /**
- * 用户信息
- * @TableName user
+ * 
+ * @TableName user_post_comment
  */
-@TableName(value ="user")
+@TableName(value ="user_post_comment")
 @Data
-public class UserEntity implements Serializable {
+public class UserPostCommentEntity implements Serializable {
     /**
-     * 主键
+     * 动态评论id
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
-     * 用户名
+     * 评论用户id
      */
-    private String userName;
+    private Integer userId;
 
     /**
-     * 头像url
+     * 动态id
      */
-    private String avatarUrl;
+    private Integer postId;
 
     /**
-     * 手机号
+     * 评论内容
      */
-    private String phone;
+    private String content;
 
     /**
-     * 密码
+     * 评论点赞数
      */
-    private String password;
+    private Integer likeCount;
 
     /**
-     * 状态：0禁用，1启用
+     * 创建时间
      */
-    private Integer status;
+    private Date createTime;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

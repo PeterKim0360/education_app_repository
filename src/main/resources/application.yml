@@ -1,4 +1,5 @@
 #121.41.176.238:8080 云服务器地址
+#nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 
 spring:
   application:
@@ -9,11 +10,11 @@ spring:
   #本地开发数据库改成自己的
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://121.41.176.238:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
     username: root
-    password: "sct"
+    #password: "050311"
     #以下是云数据库密码
-#    password: "Root_123"
+    password: "Root_123"
 
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
@@ -39,7 +40,22 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: false
-
 dashscope:
   api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
-
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: '默认分组'
+      paths-to-match: '/**'
+#      packages-to-scan: com.xiaominfo.knife4j.demo.web
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

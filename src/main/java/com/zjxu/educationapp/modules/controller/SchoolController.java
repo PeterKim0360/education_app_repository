@@ -11,6 +11,8 @@ import com.zjxu.educationapp.modules.service.ProvinceInfoService;
 import com.zjxu.educationapp.modules.service.SchoolService;
 import com.zjxu.educationapp.modules.vo.SchoolDetailVO;
 import com.zjxu.educationapp.modules.vo.SchoolSimpleVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 学校
+ * 搜索学校相关接口
  */
+@Tag(name = "搜索学校相关接口")
 @Slf4j
 @RestController
 @RequestMapping(value = "/api/school")
@@ -35,6 +38,7 @@ public class SchoolController {
     /**
      * 学校分页查询
      */
+    @Operation(summary = "学校分页查询",description = "可选：page,size")
     @GetMapping
     public Result<IPage<SchoolSimpleVO>> QuerySchoolInfoVO(
             @RequestParam(defaultValue = "1") int page,
@@ -54,6 +58,7 @@ public class SchoolController {
     /**
      * 根据学校id查详情
      */
+    @Operation(summary = "根据学校id查详情",description = "传参：schoolId;可选：provinceId")
     @GetMapping("/detail")
     public Result<SchoolDetailVO> QuerySchoolInfo(
             @RequestParam("schoolId") Long schoolId,
@@ -82,6 +87,7 @@ public class SchoolController {
     /**
      * 根据学校名称模糊分页查询
      */
+    @Operation(summary = "根据学校名称模糊分页查询",description = "传参：schoolName;可选：page,size")
     @GetMapping("/select/name")
     public Result<IPage<SchoolSimpleVO>> QuerySchoolInfoByName(
             @RequestParam("schoolName") String schoolName,
@@ -100,8 +106,9 @@ public class SchoolController {
     }
 
     /**
-     * 根据输入的成绩查看能够录取的学校
+     * 根据输入的成绩查看可能录取的学校
      */
+    @Operation(summary = "根据输入的成绩查看可能录取的学校",description = "传参：score;可选：page,size,provinceId")
     @GetMapping("/select/score")
     public Result<IPage<SchoolSimpleVO>> QuerySchoolInfoByScore(
             @RequestParam("score") Integer score,
