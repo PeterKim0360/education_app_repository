@@ -9,9 +9,10 @@
             <result property="subjectId" column="subject_id" />
             <result property="questionText" column="question_text" />
             <result property="isMastered" column="is_mastered" />
+            <result property="createdTime" column="created_time" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        question_id,subject_id,question_text,is_mastered
+        question_id,subject_id,question_text,is_mastered,created_time
     </sql>
 </mapper>

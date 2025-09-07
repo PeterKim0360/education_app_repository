@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
 * @author huawei
 * @description 针对表【error_questions】的数据库操作Service
-* @createDate 2025-09-06 01:50:07
+* @createDate 2025-09-07 17:19:04
 */
 public interface ErrorQuestionsService extends IService<ErrorQuestions> {
 
