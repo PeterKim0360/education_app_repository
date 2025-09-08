@@ -1,5 +1,6 @@
 package com.zjxu.educationapp.common.utils;
 
+
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
@@ -7,24 +8,31 @@ import com.aliyun.oss.OSSException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.io.ByteArrayInputStream;
 
 @Data
-@AllArgsConstructor
 @Slf4j
-public class AliOssUtil {
+@Component
+public class AliOSSUtil {
 
+    @Value("${education.alioss.endpoint}")
     private String endpoint;
-    private String accessKeyId;
-    private String accessKeySecret;
+    @Value("${education.alioss.bucket-name}")
     private String bucketName;
+    @Value("${education.alioss.access-key-id}")
+    private String accessKeyId;
+    @Value("${education.alioss.access-key-secret}")
+    private String accessKeySecret;
 
     /**
      * 文件上传
      *
-     * @param bytes
-     * @param objectName
-     * @return
+     * @param bytes 文件字节数组
+     * @param objectName 文件在OSS中的存储名称
+     * @return 文件访问URL
      */
     public String upload(byte[] bytes, String objectName) {
 
@@ -52,7 +60,7 @@ public class AliOssUtil {
             }
         }
 
-        //文件访问路径规则 https://BucketName.Endpoint/ObjectName
+        //构建文件访问路径
         StringBuilder stringBuilder = new StringBuilder("https://");
         stringBuilder
                 .append(bucketName)
