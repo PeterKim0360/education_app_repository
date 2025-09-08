@@ -19,7 +19,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     .notMatch("/login",
                             "/register",
                             "/test/**",
-                            "/square/post","/square/post/detail","/square/post/comment")
+                            "/square/post","/square/post/detail","/square/post/comment",
+                            "/doc.html", "/webjars/**", "/swagger-resources/**", "/v2/api-docs/**", "/v3/api-docs/**")
                     .check(StpUtil::checkLogin);
         })).addPathPatterns("/**");
     }
