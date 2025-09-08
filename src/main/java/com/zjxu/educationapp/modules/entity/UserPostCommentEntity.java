@@ -1,9 +1,7 @@
 package com.zjxu.educationapp.modules.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -24,7 +22,7 @@ public class UserPostCommentEntity implements Serializable {
     /**
      * 评论用户id
      */
-    private Integer userId;
+    private Long userId;
 
     /**
      * 动态id
@@ -44,6 +42,7 @@ public class UserPostCommentEntity implements Serializable {
     /**
      * 创建时间
      */
+    @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
     @TableField(exist = false)

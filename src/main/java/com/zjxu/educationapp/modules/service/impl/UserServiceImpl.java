@@ -45,9 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         StpUtil.login(userEntity.getId());
 
         Map<String,Object> result=new HashMap<>(2);
-        result.put("token",StpUtil.getTokenValue());
+        result.put("satoken",StpUtil.getTokenValue());
         result.put("userId",userEntity.getId());
-        log.info("token:{}",StpUtil.getTokenValue());
+        log.info("satoken:{}",StpUtil.getTokenValue());
         return Result.ok(result);
     }
 }

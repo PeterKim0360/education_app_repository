@@ -1,5 +1,6 @@
 package com.zjxu.educationapp.modules.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -7,6 +8,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.UserPostCommentDTO;
+import com.zjxu.educationapp.modules.dto.UserPostDTO;
 import com.zjxu.educationapp.modules.entity.UserEntity;
 import com.zjxu.educationapp.modules.entity.UserPostCommentEntity;
 import com.zjxu.educationapp.modules.entity.UserPostEntity;
@@ -37,7 +40,7 @@ public class UserPostServiceImpl extends ServiceImpl<UserPostMapper, UserPostEnt
     private UserMapper userMapper;
 
     @Override
-    public Result<List<UserPostVO>> post(Integer page, Integer size) {
+    public Result<List<UserPostVO>> getPost(Integer page, Integer size) {
         IPage<UserPostEntity> resPage = new Page<>(page, size);
         userPostMapper.selectPage(resPage, new LambdaQueryWrapper<UserPostEntity>().orderByDesc(UserPostEntity::getUpdateTime));
 //        等价userPostEntity -> this.getUserPostVO(userPostEntity)
@@ -71,7 +74,7 @@ public class UserPostServiceImpl extends ServiceImpl<UserPostMapper, UserPostEnt
     }
 
     @Override
-    public Result<List<UserPostCommentVO>> postComment(Integer postId, Integer page, Integer size) {
+    public Result<List<UserPostCommentVO>> postCommentByGet(Integer postId, Integer page, Integer size) {
         IPage<UserPostCommentEntity> resPage = new Page<>(page, size);
         userPostCommentMapper.selectPage(resPage, new LambdaQueryWrapper<UserPostCommentEntity>().eq(UserPostCommentEntity::getPostId, postId));
         List<UserPostCommentVO> list = resPage.getRecords().stream().map(userPostCommentEntity -> {
@@ -82,6 +85,24 @@ public class UserPostServiceImpl extends ServiceImpl<UserPostMapper, UserPostEnt
             return userPostCommentVO;
         }).toList();
         return Result.ok(list);
+    }
+
+    @Override
+    public Result postByPost(UserPostDTO userPostDTO) {
+        UserPostEntity userPostEntity = BeanUtil.copyProperties(userPostDTO, UserPostEntity.class);
+        //list必须转成json数组才能存进数据库
+        userPostEntity.setContentImageUrls(JSONArray.toJSONString(userPostDTO.getContentImageUrls()));
+        userPostEntity.setUserId(StpUtil.getLoginIdAsLong());
+        userPostMapper.insert(userPostEntity);
+        return Result.ok();
+    }
+
+    @Override
+    public Result<?> postCommentByPost(UserPostCommentDTO userPostCommentDTO) {
+        UserPostCommentEntity userPostCommentEntity = BeanUtil.copyProperties(userPostCommentDTO, UserPostCommentEntity.class);
+        userPostCommentEntity.setUserId(StpUtil.getLoginIdAsLong());
+        userPostCommentMapper.insert(userPostCommentEntity);
+        return Result.ok();
     }
 
     private <T> List<T> JSONArraytoList(String json, Class<T> clazz) {
