@@ -2,7 +2,7 @@ package com.zjxu.educationapp;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.lang.UUID;
-import com.zjxu.educationapp.common.utils.AliOssUtil;
+import com.zjxu.educationapp.common.utils.AliOSSUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,7 +21,7 @@ class EducationAppApplicationTests {
 //        System.out.println("token:" + StpUtil.getTokenValue());
 //    }
     @Autowired
-    private AliOssUtil aliOSSUtil;
+    private AliOSSUtil aliOSSUtil;
     @Test
     void testOSS(){
         System.out.println("123");

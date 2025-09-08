@@ -2,7 +2,7 @@ package com.zjxu.educationapp.modules.controller;
 
 
 import com.zjxu.educationapp.common.constant.ErrorCode;
-import com.zjxu.educationapp.common.utils.AliOssUtil;
+import com.zjxu.educationapp.common.utils.AliOSSUtil;
 import com.zjxu.educationapp.common.utils.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +22,7 @@ import java.util.UUID;
 @Tag(name = "通用接口")
 public class CommonController {
     @Autowired
-    private AliOssUtil aliOssUtil;
+    private AliOSSUtil aliOssUtil;
     /**
      * 文件上传
      * @param file

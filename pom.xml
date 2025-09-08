@@ -106,9 +106,9 @@
         </dependency>
         <!--        阿里云OSS调用-->
         <dependency>
-        <groupId>com.aliyun.oss</groupId>
-        <artifactId>aliyun-sdk-oss</artifactId>
-        <version>${aliyun.sdk.oss}</version>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>${aliyun.sdk.oss}</version>
         </dependency>
     </dependencies>
 

@@ -21,7 +21,7 @@ sa-token:
   token-name: satoken
   # token 有效期（单位：秒） 默认30天，-1 代表永久有效
   timeout: -1
-    #  # 改成30分钟
+  #  # 改成30分钟
   #  timeout: 1800
   # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
   active-timeout: -1
@@ -59,7 +59,7 @@ knife4j:
   setting:
     language: zh_cn
 
-# 阿里OSS配置
+# 阿里云OSS配置，AK密钥不能显示存放，配置在环境
 education:
   alioss:
     endpoint: https://oss-cn-hangzhou.aliyuncs.com
