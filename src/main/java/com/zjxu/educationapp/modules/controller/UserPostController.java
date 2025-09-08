@@ -22,8 +22,8 @@ public class UserPostController {
     private UserPostService userPostService;
 
     @Operation(summary = "分页查询动态",description = "分页参数可选：page默认值1，size默认值5")
-    @GetMapping("/post")
-    public Result getPost(
+    @GetMapping("/page/post")
+    public Result pagePost(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "5") Integer size) {
         log.info("分页查询动态");
@@ -59,7 +59,7 @@ public class UserPostController {
 
     @Operation(summary = "发布动态", description = "所有参数必传")
     @PostMapping("/post")
-    public Result<?> postByPost(@RequestBody UserPostDTO userPostDTO) {
+    public Result<?> post(@RequestBody UserPostDTO userPostDTO) {
         log.info("发布动态:{}",userPostDTO);
         return userPostService.postByPost(userPostDTO);
     }
