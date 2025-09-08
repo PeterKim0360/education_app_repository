@@ -33,6 +33,7 @@ public class SingleChatEndpoint {
 
 //    private Long fromUserId;
 
+    //TODO 关于多用户的会话，单例问题
     private String sessionKey;
     private String reverseSessionKey;
     //另一种可用注入方式
@@ -44,6 +45,7 @@ public class SingleChatEndpoint {
     //NOTE 区别于springMvc，websocket协议需要使用@PathParm("参数名")来获取路径参数
     @OnOpen
     public void onOpen(@PathParam("toUserId") Long toUserId, Session session) {
+        log.info("");
         /*
         建立连接时就确定接收消息人，在线or不在线：在线通过websocket发消息，不在线调用service持久化历史消息；
         一开始进入对话页面需要将历史消息展示出来，能够像微信一样确定是谁发的历史消息

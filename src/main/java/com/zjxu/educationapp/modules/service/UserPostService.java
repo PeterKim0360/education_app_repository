@@ -2,6 +2,8 @@ package com.zjxu.educationapp.modules.service;
 
 import com.zjxu.educationapp.common.utils.Result;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zjxu.educationapp.modules.dto.UserPostCommentDTO;
+import com.zjxu.educationapp.modules.dto.UserPostDTO;
 import com.zjxu.educationapp.modules.entity.UserPostEntity;
 
 /**
@@ -11,9 +13,13 @@ import com.zjxu.educationapp.modules.entity.UserPostEntity;
 */
 public interface UserPostService extends IService<UserPostEntity> {
 
-    Result post(Integer page, Integer size);
+    Result getPost(Integer page, Integer size);
 
     Result postDetail(Integer postId);
 
-    Result postComment(Integer postId, Integer page, Integer size);
+    Result postCommentByGet(Integer postId, Integer page, Integer size);
+
+    Result postByPost(UserPostDTO userPostDTO);
+
+    Result<?> postCommentByPost(UserPostCommentDTO userPostDTO);
 }
