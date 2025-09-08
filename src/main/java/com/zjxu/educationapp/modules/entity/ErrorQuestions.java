@@ -38,6 +38,10 @@ public class ErrorQuestions {
     /**
      * 创建时间
      */
-    @TableField(value = "created_time")
     private Date createdTime;
+
+    /**
+     * 当前用户ID
+     */
+    private Long userId;
 }

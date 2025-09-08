@@ -1,5 +1,6 @@
 package com.zjxu.educationapp.modules.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -18,9 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -74,10 +78,12 @@ public class QuestionController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "8") int size){
         log.info("根据学科ID:{}，查询未掌握的错题",subjectId);
+        long userId = StpUtil.getLoginIdAsLong();
         List<ErrorQuestions> errorQuestions = errorQuestionsService.
                 list(new QueryWrapper<ErrorQuestions>()
                         .eq("subject_id", subjectId)
                         .eq("is_mastered",0)
+                        .eq("user_id",userId)
                         .orderByDesc("created_time"));
         List<ErrorQuestionsVO> errorQuestionsVOS=new ArrayList<>();
 
@@ -111,8 +117,8 @@ public class QuestionController {
                 String choices = StrUtil.trim(multipleChoice.getOptions());
                 List<String> optionList=new ArrayList<>();
                 if (!choices.isEmpty()&&choices.length()>0){
-                    // 按换行符拆分（兼容Windows \r\n 和 Linux \n）
-                    String[] optionArray = choices.split("\\r?\\n");
+                    // 按","拆分
+                    String[] optionArray = choices.split(",");
                     for (String option : optionArray) {
                         optionList.add(StrUtil.trim(option));
                     }
@@ -168,8 +174,63 @@ public class QuestionController {
      */
     @Operation(summary = "错题记载",description = "传参：errorQuestionDTO")
     @PostMapping("/error/insert")
+    @Transactional
     public Result ErrorQuestionInsert(@RequestBody ErrorQuestionDTO errorQuestionDTO){
-        //TODO
+        //题型类型code=1->单选，code=2->多选，code=3->判断，code=4->填空
+        long userId = StpUtil.getLoginIdAsLong();
+        Integer code = errorQuestionDTO.getCode();
+        ErrorQuestions questions = new ErrorQuestions();
+        log.info("题干：{}",errorQuestionDTO.getQuestionText());
+        questions.setQuestionText(StrUtil.trim(errorQuestionDTO.getQuestionText()));
+        questions.setCreatedTime(new Date());
+        questions.setIsMastered(false);
+        questions.setSubjectId(errorQuestionDTO.getSubjectId());
+        questions.setUserId(userId);
+        //将questions保存到error_questions数据库
+        errorQuestionsService.save(questions);
+        Integer questionId = questions.getQuestionId();
+        if (code==1){
+            //为单选题
+            SingleChoice singleChoice = SingleChoice.builder()
+                    .questionId(questionId)
+                    .optionA(StrUtil.trim(errorQuestionDTO.getOptionA()))
+                    .optionB(StrUtil.trim(errorQuestionDTO.getOptionB()))
+                    .optionC(StrUtil.trim(errorQuestionDTO.getOptionC()))
+                    .optionD(StrUtil.trim(errorQuestionDTO.getOptionD()))
+                    .correctOption(errorQuestionDTO.getSingleCorrectOption())
+                    .userAnswer(errorQuestionDTO.getSingleUserAnswer())
+                    .build();
+            //保存到单选题的数据库
+            singleChoiceService.save(singleChoice);
+        } else if (code == 2) {
+            //为多选
+            MultipleChoice multipleChoice = MultipleChoice.builder()
+                    .questionId(questionId)
+                    .options(StrUtil.join(",",errorQuestionDTO.getOptions()))
+                    .correctOptions(StrUtil.trim(errorQuestionDTO.getMultipleCorrectOptions()))
+                    .userAnswer(StrUtil.trim(errorQuestionDTO.getMultipleUserAnswer()))
+                    .build();
+            //保存到多选题的数据库
+            multipleChoiceService.save(multipleChoice);
+        } else if (code == 3) {
+            //为判断
+            TrueFalse trueFalse = TrueFalse.builder()
+                    .questionId(questionId)
+                    .correctResult(errorQuestionDTO.getTrueFalseCorrectResult())
+                    .TrueFalseUserAnswer(errorQuestionDTO.getTrueFalseUserAnswer())
+                    .build();
+            //保存到判断题的数据库
+            trueFalseService.save(trueFalse);
+        } else{
+            //填空
+            FillInBlank fillInBlank = FillInBlank.builder()
+                    .questionId(questionId)
+                    .correctAnswers(errorQuestionDTO.getFillInBlankCorrectAnswers())
+                    .userAnswers(errorQuestionDTO.getFillInBlankUserAnswers())
+                    .build();
+            //保存到填空题的数据库
+            fillInBlankService.save(fillInBlank);
+        }
         return Result.ok();
     }
 

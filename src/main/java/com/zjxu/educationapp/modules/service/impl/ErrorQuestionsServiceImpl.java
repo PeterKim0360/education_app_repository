@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author huawei
 * @description 针对表【error_questions】的数据库操作Service实现
-* @createDate 2025-09-06 01:50:07
+* @createDate 2025-09-07 17:19:04
 */
 @Service
 public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper, ErrorQuestions>
