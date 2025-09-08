@@ -59,6 +59,7 @@ knife4j:
   setting:
     language: zh_cn
 
+# 阿里云OSS配置，AK密钥不能显示存放，配置在环境
 education:
   alioss:
     endpoint: https://oss-cn-hangzhou.aliyuncs.com
