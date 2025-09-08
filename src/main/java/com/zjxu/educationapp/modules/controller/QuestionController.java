@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 错题接口
@@ -38,13 +39,7 @@ public class QuestionController {
     @Autowired
     private ErrorQuestionsService errorQuestionsService;
     @Autowired
-    private SingleChoiceService singleChoiceService;
-    @Autowired
-    private MultipleChoiceService multipleChoiceService;
-    @Autowired
-    private TrueFalseService trueFalseService;
-    @Autowired
-    private FillInBlankService fillInBlankService;
+    private SubjectsService subjectsService;
     private final QuestionService questionService;
 
     public QuestionController(QuestionService questionService) {
@@ -67,6 +62,16 @@ public class QuestionController {
                 questionType, questionStyle,totalCount, pageNum, pageSize);
         return ResponseEntity.ok(result);
     }
+    /**
+     * 错题默认页面响应
+     */
+    @Operation(summary = "错题默认页面响应")
+    @GetMapping
+    public Result<IPage<Map<String, Map<Integer, String>>>> responseTypes(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size){
+        return subjectsService.responseDefault(page,size);
+    }
 
     /**
      * 错题分页查询
@@ -78,95 +83,7 @@ public class QuestionController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "8") int size){
         log.info("根据学科ID:{}，查询未掌握的错题",subjectId);
-        long userId = StpUtil.getLoginIdAsLong();
-        List<ErrorQuestions> errorQuestions = errorQuestionsService.
-                list(new QueryWrapper<ErrorQuestions>()
-                        .eq("subject_id", subjectId)
-                        .eq("is_mastered",0)
-                        .eq("user_id",userId)
-                        .orderByDesc("created_time"));
-        List<ErrorQuestionsVO> errorQuestionsVOS=new ArrayList<>();
-
-        for (ErrorQuestions errorQuestion : errorQuestions) {
-            ErrorQuestionsVO errorQuestionsVO = new ErrorQuestionsVO();
-            //将ErrorQuestions复制给ErrorQusVO
-            BeanUtils.copyProperties(errorQuestion,errorQuestionsVO);
-            // 初始化空字段为""
-            initEmptyFields(errorQuestionsVO);
-            //清理题干空格
-            errorQuestionsVO.setQuestionText(StrUtil.trim(errorQuestionsVO.getQuestionText()));
-            //查该学科的单选错题
-            SingleChoice singleChoice = singleChoiceService.getOne(new QueryWrapper<SingleChoice>().eq("question_id", errorQuestion.getQuestionId()));
-            if (singleChoice!=null) {
-                //将SingleChoice复制给ErrorQusVO
-                errorQuestionsVO.setOptionA(StrUtil.trim(singleChoice.getOptionA()));
-                errorQuestionsVO.setOptionB(StrUtil.trim(singleChoice.getOptionB()));
-                errorQuestionsVO.setOptionC(StrUtil.trim(singleChoice.getOptionC()));
-                errorQuestionsVO.setOptionD(StrUtil.trim(singleChoice.getOptionD()));
-
-                errorQuestionsVO.setCorrectOption(StrUtil.trim(singleChoice.getCorrectOption()));
-                errorQuestionsVO.setUserAnswer(StrUtil.trim(singleChoice.getUserAnswer()));
-
-                errorQuestionsVOS.add(errorQuestionsVO);
-                continue;
-            }
-            //查该学科的多选错题
-            MultipleChoice multipleChoice = multipleChoiceService.getOne(new QueryWrapper<MultipleChoice>().eq("question_id", errorQuestion.getQuestionId()));
-            if (multipleChoice!=null){
-                //将MultipleChoice复制给ErrorQusVO
-                String choices = StrUtil.trim(multipleChoice.getOptions());
-                List<String> optionList=new ArrayList<>();
-                if (!choices.isEmpty()&&choices.length()>0){
-                    // 按","拆分
-                    String[] optionArray = choices.split(",");
-                    for (String option : optionArray) {
-                        optionList.add(StrUtil.trim(option));
-                    }
-                }
-                errorQuestionsVO.setOptions(optionList);
-                errorQuestionsVO.setCorrectOption(StrUtil.trim(multipleChoice.getCorrectOptions()));
-                errorQuestionsVO.setUserAnswer(StrUtil.trim(multipleChoice.getUserAnswer()));
-
-                errorQuestionsVOS.add(errorQuestionsVO);
-                continue;
-            }
-            //查该学科的判断错题
-            TrueFalse trueFalse = trueFalseService.getOne(new QueryWrapper<TrueFalse>().eq("question_id", errorQuestion.getQuestionId()));
-            if (trueFalse!=null){
-                //将TrueFalse复制给ErrorQusVO
-                errorQuestionsVO.setCorrectResult(trueFalse.getCorrectResult()==null?false:trueFalse.getCorrectResult());
-                errorQuestionsVO.setTrueFalseUserAnswer(trueFalse.getTrueFalseUserAnswer()==null?false:trueFalse.getTrueFalseUserAnswer());
-
-                errorQuestionsVOS.add(errorQuestionsVO);
-                continue;
-            }
-            //查该学科的填空错题
-            FillInBlank fillInBlank = fillInBlankService.getOne(new QueryWrapper<FillInBlank>().eq("question_id", errorQuestion.getQuestionId()));
-            if (fillInBlank!=null) {
-                //将FillInBlank复制给ErrorQusVO
-                errorQuestionsVO.setCorrectOption(StrUtil.trim(fillInBlank.getCorrectAnswers()));
-                errorQuestionsVO.setUserAnswer(StrUtil.trim(fillInBlank.getUserAnswers()));
-
-                errorQuestionsVOS.add(errorQuestionsVO);
-            }
-        }
-        log.info("{}",errorQuestionsVOS);
-        IPage<ErrorQuestionsVO> questionsVOIPage = MpListPageUtil.getPage(errorQuestionsVOS, page, size);
-        return Result.ok(questionsVOIPage);
-    }
-
-    //初始化VO的空字段为""（避免JSON中出现null）
-    private void initEmptyFields(ErrorQuestionsVO vo) {
-        vo.setOptionA(StrUtil.blankToDefault(vo.getOptionA(), ""));
-        vo.setOptionB(StrUtil.blankToDefault(vo.getOptionB(), ""));
-        vo.setOptionC(StrUtil.blankToDefault(vo.getOptionC(), ""));
-        vo.setOptionD(StrUtil.blankToDefault(vo.getOptionD(), ""));
-        vo.setOptions(new ArrayList<>());
-        vo.setCorrectOption(StrUtil.blankToDefault(vo.getCorrectOption(), ""));
-        vo.setUserAnswer(StrUtil.blankToDefault(vo.getUserAnswer(), ""));
-        // 布尔类型默认值
-        if (vo.getCorrectResult() == null) vo.setCorrectResult(false);
-        if (vo.getTrueFalseUserAnswer() == null) vo.setTrueFalseUserAnswer(false);
+        return errorQuestionsService.queryErrorQuestions(subjectId,page,size);
     }
 
     /**
@@ -176,62 +93,8 @@ public class QuestionController {
     @PostMapping("/error/insert")
     @Transactional
     public Result ErrorQuestionInsert(@RequestBody ErrorQuestionDTO errorQuestionDTO){
-        //题型类型code=1->单选，code=2->多选，code=3->判断，code=4->填空
-        long userId = StpUtil.getLoginIdAsLong();
-        Integer code = errorQuestionDTO.getCode();
-        ErrorQuestions questions = new ErrorQuestions();
-        log.info("题干：{}",errorQuestionDTO.getQuestionText());
-        questions.setQuestionText(StrUtil.trim(errorQuestionDTO.getQuestionText()));
-        questions.setCreatedTime(new Date());
-        questions.setIsMastered(false);
-        questions.setSubjectId(errorQuestionDTO.getSubjectId());
-        questions.setUserId(userId);
-        //将questions保存到error_questions数据库
-        errorQuestionsService.save(questions);
-        Integer questionId = questions.getQuestionId();
-        if (code==1){
-            //为单选题
-            SingleChoice singleChoice = SingleChoice.builder()
-                    .questionId(questionId)
-                    .optionA(StrUtil.trim(errorQuestionDTO.getOptionA()))
-                    .optionB(StrUtil.trim(errorQuestionDTO.getOptionB()))
-                    .optionC(StrUtil.trim(errorQuestionDTO.getOptionC()))
-                    .optionD(StrUtil.trim(errorQuestionDTO.getOptionD()))
-                    .correctOption(errorQuestionDTO.getSingleCorrectOption())
-                    .userAnswer(errorQuestionDTO.getSingleUserAnswer())
-                    .build();
-            //保存到单选题的数据库
-            singleChoiceService.save(singleChoice);
-        } else if (code == 2) {
-            //为多选
-            MultipleChoice multipleChoice = MultipleChoice.builder()
-                    .questionId(questionId)
-                    .options(StrUtil.join(",",errorQuestionDTO.getOptions()))
-                    .correctOptions(StrUtil.trim(errorQuestionDTO.getMultipleCorrectOptions()))
-                    .userAnswer(StrUtil.trim(errorQuestionDTO.getMultipleUserAnswer()))
-                    .build();
-            //保存到多选题的数据库
-            multipleChoiceService.save(multipleChoice);
-        } else if (code == 3) {
-            //为判断
-            TrueFalse trueFalse = TrueFalse.builder()
-                    .questionId(questionId)
-                    .correctResult(errorQuestionDTO.getTrueFalseCorrectResult())
-                    .TrueFalseUserAnswer(errorQuestionDTO.getTrueFalseUserAnswer())
-                    .build();
-            //保存到判断题的数据库
-            trueFalseService.save(trueFalse);
-        } else{
-            //填空
-            FillInBlank fillInBlank = FillInBlank.builder()
-                    .questionId(questionId)
-                    .correctAnswers(errorQuestionDTO.getFillInBlankCorrectAnswers())
-                    .userAnswers(errorQuestionDTO.getFillInBlankUserAnswers())
-                    .build();
-            //保存到填空题的数据库
-            fillInBlankService.save(fillInBlank);
-        }
-        return Result.ok();
+        return errorQuestionsService.insertQuestions(errorQuestionDTO);
     }
+
 
 }

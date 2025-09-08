@@ -23,4 +23,9 @@ public class Subjects {
      * 学科名称
      */
     private String subjectName;
+
+    /**
+     * 学科分类
+     */
+    private String subjectType;
 }

@@ -12,7 +12,6 @@ public class SchoolDetailVO {
     private String schoolProfile;
     private Boolean is985;
     private Boolean is211;
-    private Integer schoolScore;
     private Integer schoolScoreThisYear;
     private Integer schoolScoreLastYear;
     private Integer schoolScoreLastLastYear;

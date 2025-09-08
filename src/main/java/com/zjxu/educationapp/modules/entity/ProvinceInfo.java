@@ -18,10 +18,6 @@ public class ProvinceInfo {
      */
     private Long provinceId;
 
-    /**
-     * 省份名称
-     */
-    private String provinceName;
 
     /**
      * 学校ID

@@ -3,6 +3,7 @@ package com.zjxu.educationapp.modules.service.impl;
 import com.zjxu.educationapp.common.constant.QuestionShowType;
 import com.zjxu.educationapp.common.utils.AiQuestionParser;
 import com.zjxu.educationapp.common.utils.PageInfo;
+import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.Question;
 import com.zjxu.educationapp.modules.vo.QuestionResult;
 import org.springframework.stereotype.Service;
@@ -191,4 +192,5 @@ public class QuestionService {
         }
         return null;
     }
+
 }
