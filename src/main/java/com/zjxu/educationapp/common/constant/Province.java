@@ -12,6 +12,7 @@ public enum Province {
     ZHEJIANG_PROVINCE(1,"浙江省"),
     JIANGSU_PROVINCE(2,"江苏省");
 
+
     private Integer id;
     private String province;
     Province(Integer id,String province){

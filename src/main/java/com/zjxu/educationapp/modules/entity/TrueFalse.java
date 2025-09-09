@@ -24,11 +24,16 @@ public class TrueFalse {
     /**
      * 正确结果（0：错误，1：正确）
      */
-    private Boolean correctResult;
+    private String correctResult;
 
     /**
      * 用户答案（0：错误，1：正确）
      */
     @TableField(value = "user_answer")
-    private Boolean TrueFalseUserAnswer;
+    private String TrueFalseUserAnswer;
+
+    /**
+     * 选项
+     */
+    private String options;
 }

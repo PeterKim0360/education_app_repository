@@ -26,7 +26,7 @@ public class ErrorQuestionsVO {
     //创建该错题时间
     private Date createdTime;
     //判断题的结果
-    private Boolean correctResult;
+    private String correctResult;
     //判断题的用户答案
-    private Boolean TrueFalseUserAnswer;
+    private String TrueFalseUserAnswer;
 }

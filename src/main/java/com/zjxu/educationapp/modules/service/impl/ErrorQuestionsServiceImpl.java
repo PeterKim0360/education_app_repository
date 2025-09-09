@@ -105,9 +105,18 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             TrueFalse trueFalse = trueFalseMapper.selectOne(new QueryWrapper<TrueFalse>().eq("question_id", errorQuestion.getQuestionId()));
             if (trueFalse!=null){
                 //将TrueFalse复制给ErrorQusVO
-                errorQuestionsVO.setCorrectResult(trueFalse.getCorrectResult()==null?false:trueFalse.getCorrectResult());
-                errorQuestionsVO.setTrueFalseUserAnswer(trueFalse.getTrueFalseUserAnswer()==null?false:trueFalse.getTrueFalseUserAnswer());
-
+                String choices = StrUtil.trim(trueFalse.getOptions());
+                List<String> optionList=new ArrayList<>();
+                if (!choices.isEmpty()&&choices.length()>0){
+                    // 按","拆分
+                    String[] optionArray = choices.split(",");
+                    for (String option : optionArray) {
+                        optionList.add(StrUtil.trim(option));
+                    }
+                }
+                errorQuestionsVO.setOptions(optionList);
+                errorQuestionsVO.setCorrectOption(StrUtil.trim(trueFalse.getCorrectResult()));
+                errorQuestionsVO.setUserAnswer(StrUtil.trim(trueFalse.getTrueFalseUserAnswer()));
                 errorQuestionsVOS.add(errorQuestionsVO);
                 continue;
             }
@@ -175,6 +184,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
                     .questionId(questionId)
                     .correctResult(errorQuestionDTO.getTrueFalseCorrectResult())
                     .TrueFalseUserAnswer(errorQuestionDTO.getTrueFalseUserAnswer())
+                    .options(StrUtil.join(",",errorQuestionDTO.getOptions()))
                     .build();
             //保存到判断题的数据库
             trueFalseMapper.insert(trueFalse);
@@ -203,9 +213,8 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
         vo.setOptions(new ArrayList<>());
         vo.setCorrectOption(StrUtil.blankToDefault(vo.getCorrectOption(), ""));
         vo.setUserAnswer(StrUtil.blankToDefault(vo.getUserAnswer(), ""));
-        // 布尔类型默认值
-        if (vo.getCorrectResult() == null) vo.setCorrectResult(false);
-        if (vo.getTrueFalseUserAnswer() == null) vo.setTrueFalseUserAnswer(false);
+        vo.setCorrectResult(StrUtil.blankToDefault(vo.getCorrectResult(), ""));
+        vo.setTrueFalseUserAnswer(StrUtil.blankToDefault(vo.getTrueFalseUserAnswer(), ""));
     }
 }
 

@@ -21,16 +21,16 @@ public class ErrorQuestionDTO {
     private String singleUserAnswer;
     //单选正确的答案，不是单选则""
     private String singleCorrectOption;
-    //如果是多选,不是则为[]
+    //如果是多选或判断,不是则为[]
     private List<String> options;
     //多选用户的答案，不是多选则""
     private String multipleUserAnswer;
     //多选正确的答案，不是多选则""
     private String multipleCorrectOptions;
-    //如果是判断，正确答案，不是则默认false
-    private Boolean trueFalseCorrectResult=false;
+    //如果是判断，正确答案，不是则默认""
+    private String trueFalseCorrectResult;
     //用户答案同理
-    private Boolean trueFalseUserAnswer=false;
+    private String trueFalseUserAnswer;
     //如果是填空，正确答案，不是则""
     private String fillInBlankCorrectAnswers;
     //用户答案同理

@@ -27,6 +27,6 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
      * @param errorQuestionDTO
      * @return
      */
-    Result insertQuestions(ErrorQuestionDTO errorQuestionDTO);
+    Result<?> insertQuestions(ErrorQuestionDTO errorQuestionDTO);
 
 }

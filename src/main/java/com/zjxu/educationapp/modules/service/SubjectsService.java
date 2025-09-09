@@ -5,6 +5,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.Subjects;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,4 +19,16 @@ public interface SubjectsService extends IService<Subjects> {
      * @return
      */
     Result<IPage<Map<String, Map<Integer, String>>>> responseDefault(int page, int size);
+
+    /**
+     * AI生题提供的科目类型
+     * @return
+     */
+    Result<IPage<Map<Integer,String>>> queryAIQuestions(int page, int size);
+
+    /**
+     * AI生题提供的题目类型
+     * @return
+     */
+    Result<List<String>> queryAIType();
 }
