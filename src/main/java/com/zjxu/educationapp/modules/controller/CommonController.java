@@ -1,6 +1,7 @@
 package com.zjxu.educationapp.modules.controller;
 
 
+import cn.hutool.core.lang.UUID;
 import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.utils.AliOSSUtil;
 import com.zjxu.educationapp.common.utils.Result;
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/common")
@@ -22,29 +24,32 @@ import java.util.UUID;
 @Tag(name = "通用接口")
 public class CommonController {
     @Autowired
-    private AliOSSUtil aliOssUtil;
+    private AliOSSUtil aliOSSUtil;
+
     /**
-     * 文件上传
-     * @param file
+     * 文件上传，测试可以选择表单传文件
+     *
+     * @param fileList
      * @return
      */
     @PostMapping("/upload")
-    @Operation(summary = "文件上传",description = "传参：file")
-    public Result<String> upload(MultipartFile file){
-        log.info("文件上传：{}",file);
-
-        try {
+    @Operation(summary = "文件上传", description = "传参：file;限制是单个文件100MB，单此请求1024MB")
+    public Result<List<String>> upload(List<MultipartFile> fileList) {
+        log.info("文件上传：{}", fileList);
+        List<String> resList = new ArrayList<>(fileList.size());
+        for (MultipartFile file : fileList) {
             //原始文件名
             String originalFilename = file.getOriginalFilename();
-//            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            //构造新文件名称
-//            String objectName= UUID.randomUUID().toString()+ extension;
-
-            String filePath = aliOssUtil.upload(file.getBytes(), originalFilename);
-            return Result.ok(filePath);
-        } catch (IOException e) {
-            log.error("文件上传失败: {}",e);
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            //构造新文件名称,防止文件名冲突
+            String objectName = UUID.randomUUID().toString() + extension;
+            try {
+                resList.add(aliOSSUtil.upload(file.getBytes(), objectName));
+            } catch (IOException e) {
+                log.error("文件上传失败：{}", e.getMessage());
+                return Result.error(ErrorCode.UPLOAD_FAILED);
+            }
         }
-        return Result.error(ErrorCode.UPLOAD_FAILED);
+        return Result.ok(resList);
     }
 }
