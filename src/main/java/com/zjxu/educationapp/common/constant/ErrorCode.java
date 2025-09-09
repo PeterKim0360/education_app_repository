@@ -9,6 +9,7 @@ public enum ErrorCode {
     INVALID_TOKEN_ERROR(403,"token无效"),
     TOKEN_TIMEOUT_ERROR(404,"token已过期"),
     UNKNOWN_LOGIN_ERROR(405,"当前用户未登录，未知登录异常"),
+    UPLOAD_FAILED(406,"文件上传失败"),
 
     PASSWORD_ERROR(401,"密码错误"),
     PHONE_ERROR(401,"手机号不存在"),
