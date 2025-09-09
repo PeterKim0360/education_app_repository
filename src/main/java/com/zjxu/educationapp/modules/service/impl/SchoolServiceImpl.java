@@ -41,12 +41,17 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolInfoMapper, SchoolInfo>
      */
     @Override
     public Result<IPage<SchoolSimpleVO>> querySchoolInfoVO(String schoolName, Integer page, Integer size) {
-        //分页查询
-        Page<SchoolInfo> infoPage = schoolInfoMapper.selectPage(new Page<SchoolInfo>(page, size),
-                new QueryWrapper<SchoolInfo>().orderByAsc("school_rank").like("school_name",schoolName));
+        QueryWrapper<SchoolInfo> queryWrapper = new QueryWrapper<SchoolInfo>().orderByAsc("school_rank");
+        // 当schoolName不为空且不为空字符串时，添加模糊查询条件
+        if (schoolName != null && !schoolName.isEmpty()) {
+            queryWrapper.like("school_name", schoolName);
+        }
+        // 分页查询
+        Page<SchoolInfo> infoPage = schoolInfoMapper.selectPage(new Page<SchoolInfo>(page, size), queryWrapper);
+        // 转换为VO对象
         IPage<SchoolSimpleVO> simpleVOIPage = infoPage.convert(schoolInfo -> {
             SchoolSimpleVO schoolInfoVo = new SchoolSimpleVO();
-            BeanUtils.copyProperties(schoolInfo,schoolInfoVo);
+            BeanUtils.copyProperties(schoolInfo, schoolInfoVo);
             return schoolInfoVo;
         });
         return Result.ok(simpleVOIPage);
