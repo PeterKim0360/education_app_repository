@@ -48,4 +48,14 @@ public enum Subject {
         return list;
     }
 
+    public static List<Map<Integer,String>> toListSubjectName(){
+        List<Map<Integer,String>> list=new ArrayList<>();
+        for (Subject value : values()) {
+            Map<Integer,String> map=new LinkedHashMap<>();
+            map.put(value.getId(),value.getMsg());
+            list.add(map);
+        }
+        return list;
+    }
+
 }

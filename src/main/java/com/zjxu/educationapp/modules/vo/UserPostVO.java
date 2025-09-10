@@ -61,6 +61,10 @@ public class UserPostVO{
      */
     private String title;
 
+    /**
+     * 当前用户是否点赞
+     */
+    private Boolean isLiked;
 
     /**
      * 更新时间

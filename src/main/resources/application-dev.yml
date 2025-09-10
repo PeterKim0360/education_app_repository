@@ -1,0 +1,5 @@
+spring:
+  redis:
+    port: 6380
+  datasource:
+    url: jdbc:mysql://localhost:3307/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8

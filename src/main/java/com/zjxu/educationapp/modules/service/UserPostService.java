@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.dto.UserPostCommentDTO;
 import com.zjxu.educationapp.modules.dto.UserPostDTO;
 import com.zjxu.educationapp.modules.entity.UserPostEntity;
+import com.zjxu.educationapp.modules.vo.UserPostVO;
+
+import java.util.List;
 
 /**
 * @author Kim-Peter
@@ -13,7 +16,7 @@ import com.zjxu.educationapp.modules.entity.UserPostEntity;
 */
 public interface UserPostService extends IService<UserPostEntity> {
 
-    Result getPost(Integer page, Integer size);
+    Result<List<UserPostVO>> getPost(Integer page, Integer size);
 
     Result postDetail(Integer postId);
 
@@ -22,4 +25,8 @@ public interface UserPostService extends IService<UserPostEntity> {
     Result postByPost(UserPostDTO userPostDTO);
 
     Result<?> postCommentByPost(UserPostCommentDTO userPostDTO);
+
+    Result<?> likePost(Integer postId);
+
+    Result<?> likeComment(Integer commentId);
 }

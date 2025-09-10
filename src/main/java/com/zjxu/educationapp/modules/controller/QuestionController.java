@@ -92,9 +92,28 @@ public class QuestionController {
     @Operation(summary = "错题记载",description = "传参：errorQuestionDTO")
     @PostMapping("/error/insert")
     @Transactional
-    public Result ErrorQuestionInsert(@RequestBody ErrorQuestionDTO errorQuestionDTO){
+    public Result<?> ErrorQuestionInsert(@RequestBody ErrorQuestionDTO errorQuestionDTO){
         return errorQuestionsService.insertQuestions(errorQuestionDTO);
     }
 
+    /**
+     * AI生题提供的科目类型
+     */
+    @Operation(summary = "AI生题提供的科目类型")
+    @GetMapping("/AI/questions/subject")
+    public Result<IPage<Map<Integer,String>>> queryAIQuestions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size){
+        return subjectsService.queryAIQuestions(page,size);
+    }
+
+    /**
+     * AI生题提供的题目类型
+     */
+    @Operation(summary = "AI生题提供的题目类型")
+    @GetMapping("/AI/questions")
+    public Result<List<String>> queryAIType(){
+        return subjectsService.queryAIType();
+    }
 
 }

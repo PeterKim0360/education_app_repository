@@ -29,8 +29,7 @@ public class TestController {
     }
 
     /* NOTE 关于SpringMVC默认参数绑定
-    如果方法参数不写注解，针对基础数据类型，默认处理方式为@RequestParam;
-    复杂数据类型在Post请求下默认从表单数据中获取（请求体的form-data，区别于@RequestBody从JSON获取）;
+    如果方法参数不写注解，默认处理方式为@RequestParam;它还可以获取请求体的form-data数据（区别于JSON）
      */
     @GetMapping("/test/compute")
     public Result<ComputeDTO> compute(Integer type,@RequestParam Integer a,@RequestParam Integer b){

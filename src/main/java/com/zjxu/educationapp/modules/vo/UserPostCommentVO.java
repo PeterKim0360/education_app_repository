@@ -10,7 +10,10 @@ public class UserPostCommentVO {
     /*NOTE 关于表字段设计
     比如content内容字段,userName字段，以后记得加上表前缀，避免不同表字段冲突，不能直接BeanUtil.copyProperties
      */
-
+    /**
+     * 评论id
+     */
+    private Integer id;
     /**
      * 评论用户名,手动赋值
      */
@@ -31,6 +34,10 @@ public class UserPostCommentVO {
      */
     private Integer likeCount;
 
+    /**
+     * 当前用户是否点赞
+     */
+    private Boolean isLiked;
     /**
      * 创建时间
      */
