@@ -1,6 +1,10 @@
 #121.41.176.238:8080 云服务器地址
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
+#redis配置文件路径  ExecStart=/usr/local/bin/redis-server /etc/redis/redis.conf
 spring:
+  profiles:
+    active: dev
+
   application:
     name: education-app
   jackson:
@@ -9,11 +13,21 @@ spring:
   #本地开发数据库改成自己的
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://121.41.176.238:3306/education_app_db?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
     username: root
     #password: "050311"
     #以下是云数据库密码
-    password: "Root_123"
+    password: _kD7fPQUxN568VpYPWanU
+  redis:
+    host: localhost
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 50 # 最大连接数（所有线程能同时拿到的连接）
+        max-idle: 20 # 最大空闲连接数
+        min-idle: 5 # 最小空闲连接数
+        max-wait: 300ms # 获取连接的最大等待时间
+    password: _AbEtsE6AcE8NZwE6DUK4
   #文件上传大小限制
   servlet:
     multipart:

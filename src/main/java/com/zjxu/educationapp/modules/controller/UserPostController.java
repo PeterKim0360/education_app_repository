@@ -4,11 +4,14 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.UserPostCommentDTO;
 import com.zjxu.educationapp.modules.dto.UserPostDTO;
 import com.zjxu.educationapp.modules.service.UserPostService;
+import com.zjxu.educationapp.modules.vo.UserPostVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 广场动态
@@ -23,7 +26,7 @@ public class UserPostController {
 
     @Operation(summary = "分页查询动态",description = "分页参数可选：page默认值1，size默认值5")
     @GetMapping("/page/post")
-    public Result pagePost(
+    public Result<List<UserPostVO>> pagePost(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "5") Integer size) {
         log.info("分页查询动态");
@@ -69,5 +72,19 @@ public class UserPostController {
     public Result<?> postComment(@RequestBody UserPostCommentDTO userPostDTO) {
         log.info("发布评论:{}",userPostDTO);
         return userPostService.postCommentByPost(userPostDTO);
+    }
+
+    @Operation(summary = "点赞动态", description = "postId必传")
+    @PutMapping("/post/like/{postId}")
+    public Result<?> likePost(@PathVariable Integer postId) {
+        log.info("点赞动态:{}",postId);
+        return userPostService.likePost(postId);
+    }
+
+    @Operation(summary = "点赞评论", description = "commentId必传")
+    @PutMapping("/post/comment/like/{commentId}")
+    public Result<?> likeComment(@PathVariable Integer commentId) {
+        log.info("点赞评论:{}",commentId);
+        return userPostService.likeComment(commentId);
     }
 }
