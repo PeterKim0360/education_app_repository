@@ -102,10 +102,11 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolInfoMapper, SchoolInfo>
             Long schoolId = provinceInfo.getSchoolId();
             schoolIds.add(schoolId);
         }
-        List<SchoolInfo> schoolInfos = schoolInfoMapper.selectBatchIds(schoolIds);
-        schoolInfos=schoolInfos.stream().sorted(Comparator.comparingInt(SchoolInfo::getSchoolRank)).collect(Collectors.toList());
-        IPage<SchoolInfo> schoolInfoIPage = MpListPageUtil.getPage(schoolInfos, page, size);
-        IPage<SchoolSimpleVO> simpleVOIPage = schoolInfoIPage.convert(schoolInfo -> {
+        Page<SchoolInfo> infoPage = schoolInfoMapper.selectPage(new Page<SchoolInfo>(page, size),
+                new QueryWrapper<SchoolInfo>()
+                        .in("school_id", schoolIds)
+                        .orderByAsc("school_rank"));
+        IPage<SchoolSimpleVO> simpleVOIPage = infoPage.convert(schoolInfo -> {
             SchoolSimpleVO schoolSimpleVO = new SchoolSimpleVO();
             BeanUtils.copyProperties(schoolInfo, schoolSimpleVO);
             return schoolSimpleVO;

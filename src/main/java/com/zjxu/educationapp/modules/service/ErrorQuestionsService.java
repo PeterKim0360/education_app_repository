@@ -29,4 +29,10 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
      */
     Result<?> insertQuestions(ErrorQuestionDTO errorQuestionDTO);
 
+    /**
+     * 取消错题
+     * @param questionId
+     * @return
+     */
+    Result<?> ErrorQuestionDel(int questionId);
 }

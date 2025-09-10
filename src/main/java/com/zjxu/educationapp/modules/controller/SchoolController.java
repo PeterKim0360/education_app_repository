@@ -37,6 +37,7 @@ public class SchoolController {
     private SchoolService schoolService;
     @Autowired
     private ProvinceService provinceService;
+
     /**
      * 学校分页查询（含模糊）
      */

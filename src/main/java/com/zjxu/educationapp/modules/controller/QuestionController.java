@@ -97,6 +97,17 @@ public class QuestionController {
     }
 
     /**
+     *取消错题
+     */
+    @Operation(summary = "取消错题")
+    @DeleteMapping("/error/delete")
+    @Transactional
+    public Result<?> ErrorQuestionDel(@RequestParam("questionId") int questionId){
+        log.info("取消错题收藏");
+        return errorQuestionsService.ErrorQuestionDel(questionId);
+    }
+
+    /**
      * AI生题提供的科目类型
      */
     @Operation(summary = "AI生题提供的科目类型")

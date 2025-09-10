@@ -202,6 +202,24 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
     }
 
     /**
+     * 取消错题
+     * @param questionId
+     * @return
+     */
+    @Override
+    public Result<?> ErrorQuestionDel(int questionId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        ErrorQuestions question = errorQuestionsMapper.selectOne(new QueryWrapper<ErrorQuestions>()
+                .eq("user_id", userId)
+                .eq("question_id", questionId));
+        question.setIsMastered(true);
+        errorQuestionsMapper.update(question,new QueryWrapper<ErrorQuestions>()
+                .eq("question_id",questionId)
+                .eq("user_id",userId));
+        return Result.ok();
+    }
+
+    /**
      * 初始化VO的空字段为""（避免JSON中出现null）
      * @param vo
      */

@@ -25,8 +25,6 @@ import java.util.Map;
 @Slf4j
 public class SubjectsServiceImpl extends ServiceImpl<SubjectsMapper, Subjects>
     implements SubjectsService{
-    @Autowired
-    private SubjectsMapper subjectsMapper;
     /**
      * 错题默认页面响应
      * @return
