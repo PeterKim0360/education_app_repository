@@ -1,6 +1,5 @@
 #121.41.176.238:8080 云服务器地址
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
-#redis配置文件路径  ExecStart=/usr/local/bin/redis-server /etc/redis/redis.conf
 spring:
   profiles:
     active: dev

@@ -1,0 +1,21 @@
+//NOTE git笔记
+方案一：整理 dev 分支后合并（推荐）
+这是最规范的做法。你不需要手动删除每一个提交，而是使用 交互式变基 (Interactive Rebase) 或 合并提交 (Squash Merge) 来整理历史记录。
+
+方法 1: 在合并时整理（最简单）
+当你准备将 dev 合并到 master 时，使用 --squash 选项。这会将 dev 分支上的所有更改“压缩”成一个新的更改集，然后你只需要做一次提交到 master。
+
+# 1. 切换到主分支
+git checkout master
+
+# 2. 拉取最新的 master 代码（确保是最新版本）
+git pull origin master
+
+# 3. 执行 squash merge，将 dev 分支的所有修改压缩成一个改动
+git merge --squash dev
+
+# 4. 此时，所有 dev 的更改已经暂存（staged）在你的工作区，但尚未提交。你需要创建一个新的提交。
+git commit -m "feat: squash merge all changes from dev branch" # 提交信息你自己写清楚即可
+
+# 5. 将整理后的干净 master 推送到远程
+git push origin master
