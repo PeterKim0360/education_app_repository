@@ -5,18 +5,17 @@
 <mapper namespace="com.zjxu.educationapp.modules.mapper.StuHomeworkMapper">
 
     <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.StuHomework">
-            <id property="homeworkId" column="homework_id" />
+            <result property="homeworkId" column="homework_id" />
             <result property="subjectId" column="subject_id" />
             <result property="userId" column="user_id" />
-            <result property="completion" column="completion" />
-            <result property="correcting" column="correcting" />
+            <result property="completeAndCorrect" column="complete_and_correct" />
             <result property="homeworkName" column="homework_name" />
             <result property="deadTime" column="dead_time" />
             <result property="sendTime" column="send_time" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        homework_id,subject_id,user_id,completion,correcting,homework_name,
-        dead_time,send_time
+        homework_id,subject_id,user_id,complete_and_correct,homework_name,dead_time,
+        send_time
     </sql>
 </mapper>

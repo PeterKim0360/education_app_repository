@@ -72,4 +72,9 @@ public class StuHomeworkController {
         log.info("查看该学科已完成并已批改的作业");
         return stuHomeworkService.queryCmplCor(subjectId,page,size);
     }
+
+    /**
+     * 获取老师发布的作业
+     */
+
 }

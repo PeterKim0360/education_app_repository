@@ -17,7 +17,6 @@ public class StuHomework {
     /**
      * 作业ID
      */
-    @TableId(type = IdType.AUTO)
     private Long homeworkId;
 
     /**

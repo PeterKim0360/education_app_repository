@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
 * @author huawei
 * @description 针对表【stu_homework(学生作业信息表)】的数据库操作Mapper
-* @createDate 2025-09-11 20:23:28
+* @createDate 2025-09-11 23:58:17
 * @Entity com.zjxu.educationapp.modules.entity.StuHomework
 */
 @Mapper

@@ -98,9 +98,10 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolInfoMapper, SchoolInfo>
                 .le("school_score_this_year", score + 10)
                 .ge("school_score_this_year", score - 10));
         //如果没有查询到
-        if (provinceInfoList.isEmpty()||provinceInfoList==null){
+        if (provinceInfoList == null || provinceInfoList.isEmpty()) {
             log.info("未查询到符合条件的学校");
-            return Result.ok();
+            // 返回空分页
+            return Result.ok(new Page<SchoolSimpleVO>(page, size));
         }
         List<Long> schoolIds=new ArrayList<>();
         for (ProvinceInfo provinceInfo : provinceInfoList) {
