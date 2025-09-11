@@ -57,8 +57,7 @@ public class StuHomeworkController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int size){
         log.info("查看该学科已完成但未批改的作业");
-        //TODO
-        return null;
+        return stuHomeworkService.queryCmplUnCor(subjectId,page,size);
     }
 
     /**
@@ -71,7 +70,6 @@ public class StuHomeworkController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int size){
         log.info("查看该学科已完成并已批改的作业");
-        //TODO
-        return null;
+        return stuHomeworkService.queryCmplCor(subjectId,page,size);
     }
 }

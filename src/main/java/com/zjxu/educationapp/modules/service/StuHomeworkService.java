@@ -30,4 +30,22 @@ public interface StuHomeworkService extends IService<StuHomework> {
      * @return
      */
     Result<?> delOutTime(List<Long> homeworkIds);
+
+    /**
+     * 查看该学科已完成但未批改的作业
+     * @param subjectId
+     * @param page
+     * @param size
+     * @return
+     */
+    Result<IPage<StuHomeWorkVO>> queryCmplUnCor(int subjectId, int page, int size);
+
+    /**
+     * 查看该学科已完成并已批改的作业
+     * @param subjectId
+     * @param page
+     * @param size
+     * @return
+     */
+    Result<IPage<StuHomeWorkVO>> queryCmplCor(int subjectId, int page, int size);
 }

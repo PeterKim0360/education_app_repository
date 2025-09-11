@@ -59,10 +59,6 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
         //分页查询
         Page<StuHomework> stuHomeworkPage = stuHomeworkMapper
                 .selectPage(new Page<StuHomework>(page, size), queryWrapper);
-        if (stuHomeworkPage==null){
-            log.info("没有未完成作业");
-            return Result.ok();
-        }
         //类型转换
         IPage<StuHomeWorkVO> stuHomeWorkVOIPage = stuHomeworkPage.convert(stuHomework -> {
             StuHomeWorkVO stuHomeWorkVO = new StuHomeWorkVO();
@@ -97,6 +93,50 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
         }
         log.info("有{}个不能删除，因为还未截止",homeworkIds.size()-deleted);
         return Result.ok();
+    }
+
+    /**
+     * 查看该学科已完成但未批改的作业
+     * @param subjectId
+     * @param page
+     * @param size
+     * @return
+     */
+    @Override
+    public Result<IPage<StuHomeWorkVO>> queryCmplUnCor(int subjectId, int page, int size) {
+        Page<StuHomework> stuHomeworkPage = stuHomeworkMapper.selectPage(new Page<StuHomework>(page, size),
+                new QueryWrapper<StuHomework>()
+                        .eq("subject_id", subjectId)
+                        .eq("complete_and_correct", 2));
+        IPage<StuHomeWorkVO> stuHomeWorkVOIPage = stuHomeworkPage.convert(stuHomework -> {
+            StuHomeWorkVO stuHomeWorkVO = new StuHomeWorkVO();
+            BeanUtils.copyProperties(stuHomework, stuHomeWorkVO);
+            stuHomeWorkVO.setSubject(subjectsMapper.selectById(subjectId).getSubjectName());
+            return stuHomeWorkVO;
+        });
+        return Result.ok(stuHomeWorkVOIPage);
+    }
+
+    /**
+     * 查看该学科已完成并已批改的作业
+     * @param subjectId
+     * @param page
+     * @param size
+     * @return
+     */
+    @Override
+    public Result<IPage<StuHomeWorkVO>> queryCmplCor(int subjectId, int page, int size) {
+        Page<StuHomework> stuHomeworkPage = stuHomeworkMapper.selectPage(new Page<StuHomework>(page, size),
+                new QueryWrapper<StuHomework>()
+                        .eq("subject_id", subjectId)
+                        .eq("complete_and_correct", 3));
+        IPage<StuHomeWorkVO> stuHomeWorkVOIPage = stuHomeworkPage.convert(stuHomework -> {
+            StuHomeWorkVO stuHomeWorkVO = new StuHomeWorkVO();
+            BeanUtils.copyProperties(stuHomework, stuHomeWorkVO);
+            stuHomeWorkVO.setSubject(subjectsMapper.selectById(subjectId).getSubjectName());
+            return stuHomeWorkVO;
+        });
+        return Result.ok(stuHomeWorkVOIPage);
     }
 
 }
