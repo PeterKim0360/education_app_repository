@@ -42,7 +42,7 @@ public class CelebrityChatServiceImpl implements CelebrityChatService {
         String sessionId = UUID.randomUUID().toString();
 
         // 保存用户消息到数据库
-        saveChatRecord(request.getCelebrityId(), sessionId, request.getContent(), 0);
+        saveChatRecord(request.getCelebrityId(), sessionId, request.getContent(), 1);
 
         // 调用AI生成名人回复
         String aiResponse;
@@ -53,12 +53,34 @@ public class CelebrityChatServiceImpl implements CelebrityChatService {
         }
 
         // 保存名人回复到数据库
-        saveChatRecord(request.getCelebrityId(), sessionId, aiResponse, 1);
+        saveChatRecord(request.getCelebrityId(), sessionId, aiResponse, 2);
 
         // 构建返回结果
         ChatResponse response = new ChatResponse();
         response.setContent(aiResponse);
         return response;
+    }
+
+    /**
+     * 初始化对话，让AI发送欢迎消息
+     * @param celebrityId
+     * @return
+     */
+    @Override
+    public ChatResponse initByAI(Long celebrityId) {
+        //获取名人信息
+        Celebrity celebrity = celebrityMapper.selectOne(new QueryWrapper<Celebrity>()
+                .eq("celebrity_id", celebrityId));
+        if (celebrity == null) {
+            throw new RuntimeException("名人不存在");
+        }
+        //获取名人名字
+        String celebrityName = celebrity.getCelebrityName();
+        //欢迎词
+        String welcome="你好！我是"+celebrityName+"，很高兴能和你聊天！你有什么问题都可以问我！";
+        ChatResponse chatResponse = new ChatResponse();
+        chatResponse.setContent(welcome);
+        return chatResponse;
     }
 
     private void saveChatRecord(Long celebrityId, String sessionId, String content, Integer senderType) {
