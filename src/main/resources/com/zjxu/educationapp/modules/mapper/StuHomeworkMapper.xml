@@ -9,13 +9,29 @@
             <result property="subjectId" column="subject_id" />
             <result property="userId" column="user_id" />
             <result property="completeAndCorrect" column="complete_and_correct" />
-            <result property="homeworkName" column="homework_name" />
-            <result property="deadTime" column="dead_time" />
-            <result property="sendTime" column="send_time" />
+            <result property="studentContent" column="student_content" />
+            <result property="submitTime" column="submit_time" />
+            <result property="score" column="score" />
+            <result property="correctTime" column="correct_time" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        homework_id,subject_id,user_id,complete_and_correct,homework_name,dead_time,
-        send_time
+        homework_id,subject_id,user_id,complete_and_correct,student_content,submit_time,
+        score,correct_time
     </sql>
+    <select id="selectUnComplete" resultType="com.zjxu.educationapp.modules.entity.StuHomework">
+            SELECT homework_id, subject_id, user_id, complete_and_correct,
+            student_content, submit_time, score, correct_time
+            FROM stu_homework
+            WHERE user_id=#{userId}
+            AND complete_and_correct=1
+            <if test="subjectId!=null">
+                AND subject_id=#{subjectId}
+            </if>
+            ORDER BY (SELECT dead_time FROM teach_homework WHERE homework_id = stu_homework.homework_id) ASC
+    </select>
+
+
+
+
 </mapper>

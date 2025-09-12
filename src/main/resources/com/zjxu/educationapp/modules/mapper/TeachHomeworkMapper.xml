@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.TeachHomeworkMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.TeachHomework">
+            <id property="homeworkId" column="homework_id" />
+            <result property="subjectId" column="subject_id" />
+            <result property="userId" column="user_id" />
+            <result property="correct" column="correct" />
+            <result property="homeworkName" column="homework_name" />
+            <result property="deadTime" column="dead_time" />
+            <result property="sendTime" column="send_time" />
+            <result property="createdTime" column="created_time" />
+            <result property="homeworkContent" column="homework_content" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        homework_id,subject_id,user_id,correct,homework_name,dead_time,
+        send_time,created_time,homework_content
+    </sql>
+</mapper>

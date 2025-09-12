@@ -4,20 +4,20 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 
 /**
- * 学生作业信息表
- * @TableName stu_homework
+ * 教师作业信息表
+ * @TableName teach_homework
  */
-@TableName(value ="stu_homework")
+@TableName(value ="teach_homework")
 @Data
-public class StuHomework {
+public class TeachHomework {
     /**
-     * 作业ID
+     * 
      */
+    @TableId(type = IdType.AUTO)
     private Long homeworkId;
 
     /**
@@ -31,27 +31,32 @@ public class StuHomework {
     private Long userId;
 
     /**
-     * 是否完成该作业：1，未提交；2，已提交未批改；3，已提交已批改
+     * 是否批改：0，未批改；1，已批改
      */
-    private Integer completeAndCorrect;
+    private Integer correct;
 
     /**
-     * 学生提交内容
+     * 作业名称
      */
-    private String studentContent;
+    private String homeworkName;
 
     /**
-     * 提交时间
+     * 截止日期
      */
-    private Date submitTime;
+    private Date deadTime;
 
     /**
-     * 作业得分
+     * 发布日期
      */
-    private BigDecimal score;
+    private Date sendTime;
 
     /**
-     * 批改时间
+     * 创建日期
      */
-    private Date correctTime;
+    private Date createdTime;
+
+    /**
+     * 作业内容
+     */
+    private String homeworkContent;
 }
