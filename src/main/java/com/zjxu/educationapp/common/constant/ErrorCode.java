@@ -13,6 +13,7 @@ public enum ErrorCode {
     FOLLOWED(407,"已关注过该名人"),
     UNSELECTED_FOR_DELETION(408,"未选择删除的作业"),
     DOES_NOT_EXIST_OR_HAS_NOT_EXPIRED(409,"作业ID不存在或者都未过期"),
+    DELETE_FAILED(410,"删除失败"),
 
     PASSWORD_ERROR(401,"密码错误"),
     PHONE_ERROR(401,"手机号不存在"),

@@ -13,16 +13,15 @@
             <result property="submitTime" column="submit_time" />
             <result property="score" column="score" />
             <result property="correctTime" column="correct_time" />
+        <result property="logicalDeletion" column="logical_deletion" />
     </resultMap>
 
     <sql id="Base_Column_List">
         homework_id,subject_id,user_id,complete_and_correct,student_content,submit_time,
-        score,correct_time
+        score,correct_time,logical_deletion
     </sql>
     <select id="selectUnComplete" resultType="com.zjxu.educationapp.modules.entity.StuHomework">
-            SELECT homework_id, subject_id, user_id, complete_and_correct,
-            student_content, submit_time, score, correct_time
-            FROM stu_homework
+            SELECT * FROM stu_homework
             WHERE user_id=#{userId}
             AND complete_and_correct=1
             <if test="subjectId!=null">
