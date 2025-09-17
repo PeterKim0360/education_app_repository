@@ -1,6 +1,7 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,6 +14,8 @@ import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.TeachHomeworkService;
 import com.zjxu.educationapp.modules.vo.TeachCreateHWDetailVO;
 import com.zjxu.educationapp.modules.vo.TeachCreateHWSimpleVO;
+import com.zjxu.educationapp.modules.vo.TeachSendHWDetailVO;
+import com.zjxu.educationapp.modules.vo.TeachSendHWSimpleVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +60,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         teachHomework.setCreatedTime(now);
         teachHomework.setUserId(userId);
         teachHomework.setUpdateTime(updateTime);
+        teachHomework.setDeadTime(teachCreateHomeworkDTO.getDeadTime());
         teachHomeworkMapper.insert(teachHomework);
         return Result.ok();
     }
@@ -92,7 +96,12 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
      */
     @Override
     public Result<TeachCreateHWDetailVO> findCreateHW(Long homeworkId) {
-        TeachHomework teachHomework = teachHomeworkMapper.selectById(homeworkId);
+        //获取当前用户ID
+        long userId = StpUtil.getLoginIdAsLong();
+        TeachHomework teachHomework = teachHomeworkMapper.selectOne(
+                new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId,homeworkId)
+                    .eq(TeachHomework::getUserId,userId));
         TeachCreateHWDetailVO teachCreateHWDetailVO = new TeachCreateHWDetailVO();
         BeanUtils.copyProperties(teachHomework,teachCreateHWDetailVO);
         //根据subjectID找对应名称
@@ -113,26 +122,35 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         BeanUtils.copyProperties(teachCreateHomeworkDTO,teachHomework);
         //更新更新时间
         teachHomework.setUpdateTime(new Date());
-        teachHomeworkMapper.update(teachHomework,new QueryWrapper<TeachHomework>()
-                .eq("homework_id",teachCreateHomeworkDTO.getHomeworkId()));
+        teachHomeworkMapper.update(teachHomework,new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId,teachCreateHomeworkDTO.getHomeworkId())
+                .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
         return Result.ok();
     }
 
     /**
      * 删除已创建的作业 (含批量)
-     * @param homeworkId
+     * @param homeworkIds
      * @return
      */
     @Override
-    public Result<?> delCreateHW(List<Long> homeworkId) {
-        if (homeworkId==null||homeworkId.isEmpty()){
+    public Result<?> delCreateHW(List<Long> homeworkIds) {
+        if (homeworkIds==null||homeworkIds.isEmpty()){
             log.info("未选择删除的作业");
             return Result.error(ErrorCode.UNSELECTED_FOR_DELETION);
         }
-        int deleteBatchIds = teachHomeworkMapper.deleteBatchIds(homeworkId);
-        if (deleteBatchIds==0){
-            log.info("删除失败");
-            return Result.error(ErrorCode.DELETE_FAILED);
+        for (Long homeworkId : homeworkIds) {
+            TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId,homeworkId)
+                    .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
+            teachHomework.setLogicalDeletion(0);
+            int update = teachHomeworkMapper.update(teachHomework, new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId,homeworkId)
+                    .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
+            if (update==0){
+                log.info("删除失败");
+                return Result.error(ErrorCode.DELETE_FAILED);
+            }
         }
         return Result.ok();
     }
@@ -146,10 +164,13 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         //发送时间
         Date sendTime = new Date();
         //根据ID找作业
-        TeachHomework teachHomework = teachHomeworkMapper.selectById(homeworkId);
+        TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId,homeworkId)
+                .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
         teachHomework.setSendTime(sendTime);
-        teachHomeworkMapper.update(teachHomework,new QueryWrapper<TeachHomework>()
-                .eq("homework_id",homeworkId));
+        teachHomeworkMapper.update(teachHomework,new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId,homeworkId)
+                .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
         //根据对应科目ID找班级ID
         Integer subjectId = teachHomework.getSubjectId();
         //根据班级ID找对应学生ID
@@ -163,6 +184,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                         .homeworkId(teachHomework.getHomeworkId())
                         .subjectId(teachHomework.getSubjectId())
                         .completeAndCorrect(1)
+                        .logicalDeletion(1)
                         .build();
                 stuHomeworkMapper.insert(stuHomework);
             }
@@ -184,26 +206,67 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         //逻辑删除老师的作业记录
         for (Long homeworkId : homeworkIds) {
             log.info("老师作业ID为{}的作业",homeworkId);
-            TeachHomework teachHomework = teachHomeworkMapper.selectById(homeworkId);
+            TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId,homeworkId)
+                    .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
             teachHomework.setLogicalDeletion(0);
+            teachHomeworkMapper.update(teachHomework,new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId,homeworkId)
+                    .eq(TeachHomework::getUserId,StpUtil.getLoginIdAsLong()));
         }
-//        int deleted = teachHomeworkMapper.deleteBatchIds(homeworkIds);
-//        if (deleted==0){
-//            log.info("老师作业删除失败");
-//            return Result.error(ErrorCode.DELETE_FAILED);
-//        }
         //逻辑删除学生的作业记录
         for (Long homeworkId : homeworkIds) {
             log.info("学生作业ID为{}的作业",homeworkId);
-            StuHomework stuHomework = stuHomeworkMapper.selectById(homeworkId);
-            stuHomework.setLogicalDeletion(0);
+            List<StuHomework> stuHomeworks = stuHomeworkMapper.select(homeworkId,null);
+            stuHomeworks.forEach(stuHomework -> {
+                stuHomeworkMapper.update(stuHomework.getHomeworkId(),null);
+            });
         }
-//        int deleted1 = stuHomeworkMapper.deleteBatchIds(homeworkIds);
-//        if (deleted1==0){
-//            log.info("学生作业删除失败");
-//            return Result.error(ErrorCode.DELETE_FAILED);
-//        }
         return Result.ok();
+    }
+
+    /**
+     * 查询已发布但未截止的作业
+     *
+     * @param page
+     * @param size
+     * @return
+     */
+    @Override
+    public Result<IPage<TeachSendHWSimpleVO>> querySendList(int page, int size) {
+        //获取当前用户ID
+        long userId = StpUtil.getLoginIdAsLong();
+        //获取该用户所有发布作业并按发布时间降序排序
+        Page<TeachHomework> teachHomeworkPage = teachHomeworkMapper.selectPage(new Page<>(page, size), new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getUserId, userId)
+                .eq(TeachHomework::getLogicalDeletion, 1)
+                .gt(TeachHomework::getDeadTime, new Date())
+                .isNotNull(TeachHomework::getSendTime)
+                .orderByDesc(TeachHomework::getSendTime));
+        IPage<TeachSendHWSimpleVO> teachSendHWSimpleVOIPage = teachHomeworkPage.convert(teachHomework -> {
+            TeachSendHWSimpleVO teachSendHWSimpleVO = new TeachSendHWSimpleVO();
+            BeanUtils.copyProperties(teachHomework, teachSendHWSimpleVO);
+            Subjects subjects = subjectsMapper.selectById(teachHomework.getSubjectId());
+            teachSendHWSimpleVO.setSubject(subjects==null?"未知学科":subjects.getSubjectName());
+            return teachSendHWSimpleVO;
+        });
+        return Result.ok(teachSendHWSimpleVOIPage);
+    }
+
+    /**
+     * 查询已发布作业的详细信息
+     *
+     * @param homeworkId
+     * @return
+     */
+    @Override
+    public Result<TeachSendHWDetailVO> findSendHW(Long homeworkId) {
+        TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId, homeworkId)
+                .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong()));
+        TeachSendHWDetailVO teachSendHWDetailVO = new TeachSendHWDetailVO();
+        BeanUtils.copyProperties(teachHomework,teachSendHWDetailVO);
+        return Result.ok(teachSendHWDetailVO);
     }
 
 

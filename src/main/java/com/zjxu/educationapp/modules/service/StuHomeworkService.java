@@ -2,9 +2,11 @@ package com.zjxu.educationapp.modules.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.entity.StuHomework;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkCorVO;
+import com.zjxu.educationapp.modules.vo.StuHomeWorkDetailVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkSubVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkVO;
 
@@ -50,4 +52,17 @@ public interface StuHomeworkService extends IService<StuHomework> {
      * @return
      */
     Result<IPage<StuHomeWorkCorVO>> queryCmplCor(int subjectId, int page, int size);
+    /**
+     * 提交作业
+     * @param stuHWSubmitDTO
+     * @return
+     */
+    Result<?> submitHomework(StuHWSubmitDTO stuHWSubmitDTO);
+
+    /**
+     * 查看作业详情
+     * @param homeworkId
+     * @return
+     */
+    Result<StuHomeWorkDetailVO> getHomeworkDetail(Long homeworkId);
 }

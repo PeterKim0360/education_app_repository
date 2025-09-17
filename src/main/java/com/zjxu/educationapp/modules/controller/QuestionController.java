@@ -57,11 +57,22 @@ public class QuestionController {
             @RequestParam(defaultValue = "10") int totalCount, //用户动态传入
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "5") int pageSize) throws Exception {
-
+        log.info("生成任意主题、题型的题目");
         QuestionResult result = questionService.generateQuestions(
                 questionType, questionStyle,totalCount, pageNum, pageSize);
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * AI 生成该学科错题报告
+     */
+    @Operation(summary = "AI 生成该学科错题报告",description = "传参：subjectId")
+    @GetMapping("/summary")
+    public Result<QuestionResultSummary> generateSummary(@RequestParam("subjectId") int subjectId){
+        log.info("AI 获取该学科错题总结");
+        return questionService.summary(subjectId);
+    }
+
     /**
      * 错题默认页面响应
      */

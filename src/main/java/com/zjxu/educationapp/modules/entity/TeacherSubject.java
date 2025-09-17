@@ -7,25 +7,25 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * 学生班级表
- * @TableName student_class
+ * 教师 - 学科关联表
+ * @TableName teacher_subject
  */
-@TableName(value ="student_class")
+@TableName(value ="teacher_subject")
 @Data
-public class StudentClass {
+public class TeacherSubject {
     /**
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long scId;
+    private Long id;
 
     /**
-     * 学生ID
+     * 教师ID
      */
-    private Long studentId;
+    private Long teacherId;
 
     /**
-     * 班级ID
+     * 学科ID
      */
-    private Long classId;
+    private Integer subjectId;
 }

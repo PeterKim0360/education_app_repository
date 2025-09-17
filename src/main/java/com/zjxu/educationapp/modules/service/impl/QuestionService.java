@@ -1,27 +1,65 @@
 package com.zjxu.educationapp.modules.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.constant.QuestionShowType;
 import com.zjxu.educationapp.common.utils.AiQuestionParser;
 import com.zjxu.educationapp.common.utils.PageInfo;
 import com.zjxu.educationapp.common.utils.Result;
-import com.zjxu.educationapp.modules.entity.Question;
+import com.zjxu.educationapp.modules.controller.QuestionController;
+import com.zjxu.educationapp.modules.entity.*;
+import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.vo.QuestionResult;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class QuestionService {
+    @Autowired
+    private SubjectsMapper subjectsMapper;
+    @Autowired
+    private ErrorQuestionsMapper errorQuestionsMapper;
+    @Autowired
+    private SingleChoiceMapper singleChoiceMapper;
+    @Autowired
+    private MultipleChoiceMapper multipleChoiceMapper;
+    @Autowired
+    private TrueFalseMapper trueFalseMapper;
+    @Autowired
+    private FillInBlankMapper fillInBlankMapper;
+//    private final ChatClient chatClient;
+//    private final String SYSTEM_PROMPT="你是专注于「学生错题深度分析、错因拆解、规律总结及学习改进建议」的专业助手，" +
+//            "命名为 “错题分析总结提意大师”。核心职责是通过精准提问引导用户提供错题关键信息，" +
+//            "基于学科特性、题型逻辑、学习规律，输出针对性强、可落地的错题分析结论与学习优化方案，帮助用户避免同类错误，提升学习效率。";
     private final AIGCService aigcService;
     private final AiQuestionParser aiParser;
 
     // 保留构造器（依赖注入不可删除）
+//    /**
+//     * 初始化AIGC服务
+//     * @param dashscopeChatModel
+//     */
     public QuestionService(AIGCService aigcService, AiQuestionParser aiParser) {
         this.aigcService = aigcService;
         this.aiParser = aiParser;
+//        ChatMemory chatMemory = new InMemoryChatMemory();
+//        chatClient=ChatClient.builder(dashscopeChatModel)
+//                .defaultSystem(SYSTEM_PROMPT)
+//                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
+//                .build();
     }
+//        public QuestionService(AIGCService aigcService, AiQuestionParser aiParser) {
+//        this.aigcService = aigcService;
+//        this.aiParser = aiParser;
+//    }
 
     /**
      * 生成题目（移除所有校验，支持动态数量和分页）
@@ -193,4 +231,315 @@ public class QuestionService {
         return null;
     }
 
+    /**
+     * AI 错误题分析
+     * @param subjectId 科目ID
+     * @return 分析结果
+     */
+    public Result<QuestionResultSummary> summary(int subjectId) {
+        // 1. 验证科目合法性
+        Subjects subject = subjectsMapper.selectById(subjectId);
+        if (subject == null) {
+            log.warn("科目ID:{}不存在，无法生成错题分析", subjectId);
+            return Result.error(ErrorCode.SUBJECT_DO_NOT_EXIST);
+        }
+        String subjectName = subject.getSubjectName();
+        long userId = StpUtil.getLoginIdAsLong();
+        log.info("用户ID:{}请求生成{}科目错题分析", userId, subjectName);
+
+        // 2. 查询用户该科目的所有错题记录
+        List<ErrorQuestions> errorQuestionList = errorQuestionsMapper.selectList(
+                new LambdaQueryWrapper<ErrorQuestions>()
+                        .eq(ErrorQuestions::getUserId, userId)
+                        .eq(ErrorQuestions::getSubjectId, subjectId)
+        );
+
+        // 3. 处理无错题场景
+        if (errorQuestionList.isEmpty()) {
+            log.info("用户ID:{}在{}科目暂无错题", userId, subjectName);
+            return Result.ok(new QuestionResultSummary(
+                    subjectName,
+                    "当前科目暂无错题，建议保持学习节奏，定期巩固知识点",
+                    0,
+                    Collections.emptyList()
+            ));
+        }
+
+        // 4. 关联具体题型表，统计各题型错题数 + 获取题目内容
+        Map<String, Integer> questionTypeCount = new HashMap<>();
+        List<ErrorDetail> errorDetails = new ArrayList<>();
+
+        for (ErrorQuestions eq : errorQuestionList) {
+            int questionId = eq.getQuestionId();
+            String questionType = "未知题型";
+            String questionText = "无题目内容";
+
+            // 单选题
+            SingleChoice singleChoice = singleChoiceMapper.selectById(questionId);
+            if (singleChoice != null) {
+                questionType = "单选题";
+                questionText = "选项：A." + singleChoice.getOptionA() +
+                        " B." + singleChoice.getOptionB() +
+                        (singleChoice.getOptionC() != null ? " C." + singleChoice.getOptionC() : "") +
+                        (singleChoice.getOptionD() != null ? " D." + singleChoice.getOptionD() : "");
+            }
+            // 多选题
+            else {
+                MultipleChoice multipleChoice = multipleChoiceMapper.selectById(questionId);
+                if (multipleChoice != null) {
+                    questionType = "多选题";
+                    questionText = "选项：" + multipleChoice.getOptions();
+                }
+                // 判断题
+                else {
+                    TrueFalse trueFalse = trueFalseMapper.selectById(questionId);
+                    if (trueFalse != null) {
+                        questionType = "判断题";
+                        questionText = "判断内容：" + (trueFalse.getOptions() != null ? trueFalse.getOptions() : "");
+                    }
+                    // 填空题
+                    else {
+                        FillInBlank fillInBlank = fillInBlankMapper.selectById(questionId);
+                        if (fillInBlank != null) {
+                            questionType = "填空题";
+                            questionText = "填空内容：" + (fillInBlank.getCorrectAnswers() != null ? fillInBlank.getCorrectAnswers() : "");
+                        }
+                    }
+                }
+            }
+
+            // 统计题型数量
+            questionTypeCount.put(questionType, questionTypeCount.getOrDefault(questionType, 0) + 1);
+
+            // 封装错题详情
+            errorDetails.add(new ErrorDetail(
+                    questionType,
+                    questionText,
+                    eq.getQuestionText(),
+                    eq.getIsMastered() ? "已掌握" : "未掌握"
+            ));
+        }
+
+        // 5. 构造 AI 提示词
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("请生成").append(subjectName).append("的错题分析总结报告：\n");
+        promptBuilder.append("1. 题型分布：").append(questionTypeCount).append("\n");
+        promptBuilder.append("2. 总错题数：").append(errorQuestionList.size()).append("\n");
+        promptBuilder.append("3. 错题详情：\n");
+        for (ErrorDetail detail : errorDetails) {
+            promptBuilder.append("- 题型：").append(detail.getQuestionType())
+                    .append("，题目：").append(detail.getQuestionText())
+                    .append("，掌握状态：").append(detail.getMasteryStatus()).append("\n");
+        }
+        promptBuilder.append("要求：分析高频错误题型、潜在知识漏洞，给出至少3条针对性学习建议。");
+
+        // 6. 调用 AI 生成分析结果
+        try {
+            String aiResponse = aigcService.callAI(
+                    "你是专业的教育领域 AI，需生成清晰、易懂的错题分析报告，结构包含标题、题型分布、错误总结、学习建议。",
+                    promptBuilder.toString()
+            );
+
+            // 7. 解析 AI 返回结果（智能提取建议）
+            List<String> suggestions = extractSuggestions(aiResponse);
+
+            QuestionResultSummary resultSummary = new QuestionResultSummary(
+                    subjectName,
+                    aiResponse, // 保留完整分析报告作为描述
+                    errorQuestionList.size(),
+                    suggestions
+            );
+
+
+            return Result.ok(resultSummary);
+        } catch (Exception e) {
+            log.error("调用AI生成错题分析失败，科目：{}", subjectName, e);
+            return Result.error("AI分析服务异常，请稍后重试");
+        }
+
+    }
+    /**
+     * 从AI生成的文本中提取“学习建议”部分
+     * 支持多种格式：以“学习建议：”、“建议：”、“建议如下：”开头
+     */
+    private List<String> extractSuggestions(String aiResponse) {
+        List<String> suggestions = new ArrayList<>();
+
+        // 匹配“学习建议”或“建议”开头的段落
+        String[] lines = aiResponse.split("\\n");
+        boolean inSuggestionSection = false;
+        StringBuilder currentSuggestion = new StringBuilder();
+
+        for (String line : lines) {
+            line = line.trim();
+
+            // 检查是否进入建议区域
+            if (line.contains("学习建议") || line.contains("建议：") || line.contains("建议如下")) {
+                inSuggestionSection = true;
+                continue;
+            }
+
+            if (inSuggestionSection) {
+                // 跳过空行
+                if (line.isEmpty()) {
+                    if (currentSuggestion.length() > 0) {
+                        suggestions.add(currentSuggestion.toString().trim());
+                        currentSuggestion.setLength(0);
+                    }
+                    continue;
+                }
+
+                // 如果是编号项（如 1.、2.），直接添加
+                if (line.matches("^\\d+\\. .*")) {
+                    if (currentSuggestion.length() > 0) {
+                        suggestions.add(currentSuggestion.toString().trim());
+                    }
+                    currentSuggestion.append(line).append("\n");
+                } else {
+                    currentSuggestion.append(line).append("\n");
+                }
+            }
+        }
+
+        // 添加最后一项
+        if (currentSuggestion.length() > 0) {
+            suggestions.add(currentSuggestion.toString().trim());
+        }
+
+        return suggestions;
+    }
+
+
+
+
+//    /**
+//     * AI 错误题分析
+//     * @param subjectId
+//     * @return
+//     */
+//    public Result<QuestionResultSummary> summary(int subjectId) {
+//        // 1. 验证科目合法性
+//        Subjects subject = subjectsMapper.selectById(subjectId);
+//        if (subject == null) {
+//            log.warn("科目ID:{}不存在，无法生成错题分析", subjectId);
+//            return Result.error(ErrorCode.SUBJECT_DO_NOT_EXIST);
+//        }
+//        String subjectName = subject.getSubjectName();
+//        long userId = StpUtil.getLoginIdAsLong();
+//        log.info("用户ID:{}请求生成{}科目错题分析", userId, subjectName);
+//
+//        // 2. 查询用户该科目的所有错题记录（关联具体题型表）
+//        List<ErrorQuestions> errorQuestionList = errorQuestionsMapper.selectList(
+//                new LambdaQueryWrapper<ErrorQuestions>()
+//                        .eq(ErrorQuestions::getUserId, userId)
+//                        .eq(ErrorQuestions::getSubjectId, subjectId)
+//        );
+//
+//        // 3. 处理无错题场景
+//        if (errorQuestionList.isEmpty()||errorQuestionList==null) {
+//            log.info("用户ID:{}在{}科目暂无错题", userId, subjectName);
+//            return Result.ok(new QuestionResultSummary(
+//                    subjectName,
+//                    "当前科目暂无错题，建议保持学习节奏，定期巩固知识点",
+//                    0,
+//                    Collections.emptyList()
+//            ));
+//        }
+//
+//        // 4. 关联具体题型表，统计各题型错题数
+//        Map<String, Integer> questionTypeCount = new HashMap<>(); // 题型 -> 错题数
+//        List<ErrorDetail> errorDetails = new ArrayList<>(); // 存储每道错题的详细信息（含题型、内容等）
+//
+//        for (ErrorQuestions eq : errorQuestionList) {
+//            int questionId = eq.getQuestionId();
+//            // 根据 question_id 关联不同题型表，获取题型和题目内容
+//            String questionType = "未知题型";
+//            String questionText = "无题目内容";
+//
+//            // 单选题
+//            SingleChoice singleChoice = singleChoiceMapper.selectById(questionId);
+//            if (singleChoice != null) {
+//                questionType = "单选题";
+//                questionText = "选项：A." + singleChoice.getOptionA() + " B." + singleChoice.getOptionB() +
+//                        (singleChoice.getOptionC() != null ? " C." + singleChoice.getOptionC() : "") +
+//                        (singleChoice.getOptionD() != null ? " D." + singleChoice.getOptionD() : "");
+//            }
+//            // 多选题
+//            else {
+//                MultipleChoice multipleChoice = multipleChoiceMapper.selectById(questionId);
+//                if (multipleChoice != null) {
+//                    questionType = "多选题";
+//                    questionText = "选项：" + multipleChoice.getOptions();
+//                }
+//                // 判断题
+//                else {
+//                    TrueFalse trueFalse = trueFalseMapper.selectById(questionId);
+//                    if (trueFalse != null) {
+//                        questionType = "判断题";
+//                        questionText = "判断内容：" + (trueFalse.getOptions() != null ? trueFalse.getOptions() : "");
+//                    }
+//                    // 填空题
+//                    else {
+//                        FillInBlank fillInBlank = fillInBlankMapper.selectById(questionId);
+//                        if (fillInBlank != null) {
+//                            questionType = "填空题";
+//                            questionText = "填空内容：" + (fillInBlank.getCorrectAnswers() != null ? fillInBlank.getCorrectAnswers() : "");
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // 统计题型数量
+//            questionTypeCount.put(questionType, questionTypeCount.getOrDefault(questionType, 0) + 1);
+//            // 封装错题详情
+//            errorDetails.add(new ErrorDetail(
+//                    questionType,
+//                    questionText,
+//                    eq.getQuestionText(),
+//                    eq.getIsMastered() ? "已掌握" : "未掌握"
+//            ));
+//        }
+//
+//        // 5. 构造 AI 提示词（包含题型统计和错题详情）
+//        StringBuilder promptBuilder = new StringBuilder();
+//        promptBuilder.append("请生成").append(subjectName).append("的错题分析总结报告：\n");
+//        promptBuilder.append("1. 题型分布：").append(questionTypeCount).append("\n");
+//        promptBuilder.append("2. 总错题数：").append(errorQuestionList.size()).append("\n");
+//        promptBuilder.append("3. 错题详情：\n");
+//        for (ErrorDetail detail : errorDetails) {
+//            promptBuilder.append("- 题型：").append(detail.getQuestionType())
+//                    .append("，题目：").append(detail.getQuestionText())
+//                    .append("，掌握状态：").append(detail.getMasteryStatus()).append("\n");
+//        }
+//        promptBuilder.append("要求：分析高频错误题型、潜在知识漏洞，给出至少3条针对性学习建议。");
+//
+//        // 6. 调用 AI 生成分析结果
+//        QuestionResultSummary resultSummary = chatClient.prompt()
+//                .user(promptBuilder.toString())
+//                .system(SYSTEM_PROMPT+"你是专业的教育领域 AI，需生成清晰、易懂的错题分析报告，结构包含标题、题型分布、错误总结、学习建议。")
+//                .call()
+//                .entity(QuestionResultSummary.class);
+//
+////        // 补充本地统计的总题数和题型分布（确保数据完整性）
+////        resultSummary.setTotalCount(errorQuestionList.size());
+////        resultSummary.setQuestionTypeStats(new ArrayList<>(questionTypeCount.entrySet()));
+//
+//        return Result.ok(resultSummary);
+//    }
+//
+//    // 辅助类：存储错题详情
+//    @Data
+//    class ErrorDetail {
+//        private String questionType;
+//        private String questionText;
+//        private String originalText;
+//        private String masteryStatus;
+//
+//        public ErrorDetail(String questionType, String questionText, String originalText, String masteryStatus) {
+//            this.questionType = questionType;
+//            this.questionText = questionText;
+//            this.originalText = originalText;
+//            this.masteryStatus = masteryStatus;
+//        }
+//    }
 }

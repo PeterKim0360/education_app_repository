@@ -12,5 +12,6 @@ public class TeachCreateHomeworkDTO {
     private String homeworkName;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date deadTime;
+    // 富文本内容（含图片链接）
     private String homeworkContent;
 }

@@ -5,11 +5,11 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class TeachCreateHWSimpleVO {
+public class TeachSendHWDetailVO {
     private Long homeworkId;
     private String subject;
     private String homeworkName;
+    private String homeworkContent;
+    private Date sendTime;
     private Date deadTime;
-    private Date createdTime;
-    private Date updateTime;
 }

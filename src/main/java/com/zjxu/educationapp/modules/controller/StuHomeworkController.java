@@ -2,9 +2,11 @@ package com.zjxu.educationapp.modules.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.entity.StuHomework;
 import com.zjxu.educationapp.modules.service.StuHomeworkService;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkCorVO;
+import com.zjxu.educationapp.modules.vo.StuHomeWorkDetailVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkSubVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,7 +78,23 @@ public class StuHomeworkController {
     }
 
     /**
-     * 获取老师发布的作业
+     * 提交作业
      */
+    @Operation(summary = "提交作业",description = "传参：stuHWSubmitDTO")
+    @PostMapping("/submit")
+    public Result<?> submitHomework(@RequestBody StuHWSubmitDTO stuHWSubmitDTO){
+        log.info("提交作业");
+        return stuHomeworkService.submitHomework(stuHWSubmitDTO);
+    }
+
+    /**
+     * 查看作业详情
+     */
+    @Operation(summary = "查看作业详情",description = "传参：homeworkId")
+    @GetMapping("/detail")
+    public Result<StuHomeWorkDetailVO> findHomework(@RequestParam("homeworkId") Long homeworkId){
+        log.info("查看作业详情");
+        return stuHomeworkService.getHomeworkDetail(homeworkId);
+    }
 
 }

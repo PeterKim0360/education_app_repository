@@ -7,6 +7,8 @@ import com.zjxu.educationapp.modules.entity.TeachHomework;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.TeachCreateHWDetailVO;
 import com.zjxu.educationapp.modules.vo.TeachCreateHWSimpleVO;
+import com.zjxu.educationapp.modules.vo.TeachSendHWDetailVO;
+import com.zjxu.educationapp.modules.vo.TeachSendHWSimpleVO;
 
 import java.util.List;
 
@@ -62,4 +64,18 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
      * @return
      */
     Result<?> delSendHW(List<Long> homeworkIds);
+
+    /**
+     * 查看已发布的作业
+     *
+     * @return
+     */
+    Result<IPage<TeachSendHWSimpleVO>> querySendList(int page, int size);
+
+    /**
+     * 查看已发布的作业详情
+     *
+     * @return
+     */
+    Result<TeachSendHWDetailVO> findSendHW(Long homeworkId);
 }

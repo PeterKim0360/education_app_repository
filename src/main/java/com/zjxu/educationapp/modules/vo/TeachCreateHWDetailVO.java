@@ -10,6 +10,7 @@ public class TeachCreateHWDetailVO {
     private String subject;
     private String homeworkName;
     private String homeworkContent;
+    private Date deadTime;
     private Date createdTime;
     private Date updateTime;
 }
