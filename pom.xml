@@ -37,6 +37,7 @@
         <knife4j.version>4.5.0</knife4j.version>
         <dashscope.version>2.21.5</dashscope.version>
         <aliyun.sdk.oss>3.17.4</aliyun.sdk.oss>
+<!--        <spring-aliyun-ai.version>1.0.0-M6.1</spring-aliyun-ai.version>-->
     </properties>
     <dependencies>
         <dependency>
@@ -86,6 +87,11 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>${mybatis-plus.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
 
         <!-- 添加WebSocket支持 -->
         <dependency>
@@ -116,6 +122,12 @@
             <artifactId>aliyun-sdk-oss</artifactId>
             <version>${aliyun.sdk.oss}</version>
         </dependency>
+        <!--        阿里云AI调用-->
+<!--        <dependency>-->
+<!--            <groupId>com.alibaba.cloud.ai</groupId>-->
+<!--            <artifactId>spring-ai-alibaba-starter</artifactId>-->
+<!--            <version>${spring-aliyun-ai.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -150,5 +162,14 @@
             </plugin>
         </plugins>
     </build>
-
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>spring-milestones</id>-->
+<!--            <name>Spring Milestones</name>-->
+<!--            <url>https://repo.spring.io/milestone</url>-->
+<!--            <snapshots>-->
+<!--                <enabled>false</enabled>-->
+<!--            </snapshots>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 </project>

@@ -3,6 +3,7 @@ package com.zjxu.educationapp.modules.vo;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class TeachSendHWDetailVO {
@@ -12,4 +13,5 @@ public class TeachSendHWDetailVO {
     private String homeworkContent;
     private Date sendTime;
     private Date deadTime;
+    private List<String> imageUrls;
 }

@@ -69,4 +69,9 @@ public class TeachHomework {
      * 逻辑删除：0，已删除；1，未删除
      */
     private Integer logicalDeletion;
+
+    /**
+     * 图片URL
+     */
+    private String imageUrls;
 }

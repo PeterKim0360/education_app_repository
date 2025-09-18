@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class TeachCreateHomeworkDTO {
@@ -14,4 +15,6 @@ public class TeachCreateHomeworkDTO {
     private Date deadTime;
     // 富文本内容（含图片链接）
     private String homeworkContent;
+    // 专门用于存储图片URL列表
+    private List<String> imageUrls;
 }

@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class StuHomeWorkDetailVO {
@@ -14,6 +15,7 @@ public class StuHomeWorkDetailVO {
     private Date deadTime;
     // 1-未完成，2-已提交未批改，3-已批改
     private Integer completeAndCorrect;
+    private List<String> imageUrls;
     // 提交内容（仅 status >= 2 时有）
     private String studentContent;
     //提交时间（仅 status >= 2 时有）

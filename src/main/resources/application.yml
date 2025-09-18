@@ -85,5 +85,3 @@ education:
     bucket-name: classroom-interaction
 
 
-mybatis-plus:
-  mapper-locations: classpath*:com/zjxu/educationapp/modules/mapper/**/*.xml

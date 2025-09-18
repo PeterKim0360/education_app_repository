@@ -6,15 +6,13 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.util.List;
-
 /**
- * 学科-班级表
- * @TableName subject_class
+ * 学科-班级-教师表
+ * @TableName subject_class_teach
  */
-@TableName(value ="subject_class")
+@TableName(value ="subject_class_teach")
 @Data
-public class SubjectClass {
+public class SubjectClassTeach {
     /**
      * 
      */
@@ -30,4 +28,9 @@ public class SubjectClass {
      * 班级ID
      */
     private Long classId;
+
+    /**
+     * 老师ID
+     */
+    private Long teachId;
 }

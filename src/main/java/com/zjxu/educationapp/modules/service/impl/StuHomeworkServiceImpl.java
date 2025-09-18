@@ -1,6 +1,7 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -220,7 +221,7 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
                 .eq(TeachHomework::getHomeworkId, stuHWSubmitDTO.getHomeworkId())
                 .le(TeachHomework::getDeadTime, new Date()));
 
-        if (count != null || count > 0) {
+        if (count > 0) {
             log.info("作业已过期");
             return Result.error(ErrorCode.THE_ASSIGNMENT_IS_OVERDUE);
         }
@@ -232,7 +233,7 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
                 .eq(StuHomework::getSubjectId, stuHWSubmitDTO.getSubjectId())
                 .eq(StuHomework::getLogicalDeletion, 1));
         stuHomework.setCompleteAndCorrect(2);
-        stuHomework.setStudentContent(stuHWSubmitDTO.getContent());
+        stuHomework.setStudentContent(JSON.toJSONString(stuHWSubmitDTO.getStudentContent()==null?"":stuHWSubmitDTO.getStudentContent()));
         stuHomework.setSubmitTime(new Date());
         stuHomeworkMapper.updateALL(stuHomework);
         return Result.ok();
@@ -260,6 +261,7 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
         StuHomeWorkDetailVO stuHomeWorkDetailVO = new StuHomeWorkDetailVO();
         stuHomeWorkDetailVO.setSubject(subjectName);
         BeanUtils.copyProperties(teachHomework, stuHomeWorkDetailVO);
+        stuHomeWorkDetailVO.setImageUrls(teachHomework.getImageUrls()==null?List.of(): JSON.parseArray(teachHomework.getImageUrls(), String.class));
         //获取当前学生的作业状态
         Integer completeAndCorrect = stuHomework.getCompleteAndCorrect();
         if (completeAndCorrect==1){

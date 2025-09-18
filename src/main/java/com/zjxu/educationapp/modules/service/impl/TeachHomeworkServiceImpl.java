@@ -1,6 +1,7 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -21,6 +22,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -37,8 +39,6 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     private TeachHomeworkMapper teachHomeworkMapper;
     @Autowired
     private SubjectsMapper subjectsMapper;
-    @Autowired
-    private SubjectClassMapper subjectClassMapper;
     @Autowired
     private StudentClassMapper studentClassMapper;
     @Autowired
@@ -61,6 +61,9 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         teachHomework.setUserId(userId);
         teachHomework.setUpdateTime(updateTime);
         teachHomework.setDeadTime(teachCreateHomeworkDTO.getDeadTime());
+        if (teachCreateHomeworkDTO.getImageUrls() != null) {
+            teachHomework.setImageUrls(JSON.toJSONString(teachCreateHomeworkDTO.getImageUrls()));
+        }
         teachHomeworkMapper.insert(teachHomework);
         return Result.ok();
     }
@@ -108,6 +111,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         Integer subjectId = teachHomework.getSubjectId();
         Subjects subject = subjectsMapper.selectById(subjectId);
         teachCreateHWDetailVO.setSubject(subject==null?"未知科目":subject.getSubjectName());
+        teachCreateHWDetailVO.setImageUrls(JSON.parseArray(teachHomework.getImageUrls(),String.class));
         return Result.ok(teachCreateHWDetailVO);
     }
 
@@ -120,6 +124,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     public Result<?> editCreateHW(TeachCreateHomeworkDTO teachCreateHomeworkDTO) {
         TeachHomework teachHomework = new TeachHomework();
         BeanUtils.copyProperties(teachCreateHomeworkDTO,teachHomework);
+        teachHomework.setImageUrls(teachCreateHomeworkDTO.getImageUrls()==null?"":JSON.toJSONString(teachCreateHomeworkDTO.getImageUrls()));
         //更新更新时间
         teachHomework.setUpdateTime(new Date());
         teachHomeworkMapper.update(teachHomework,new LambdaQueryWrapper<TeachHomework>()
@@ -266,6 +271,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong()));
         TeachSendHWDetailVO teachSendHWDetailVO = new TeachSendHWDetailVO();
         BeanUtils.copyProperties(teachHomework,teachSendHWDetailVO);
+        teachSendHWDetailVO.setImageUrls(teachHomework.getImageUrls()==null?List.of():JSON.parseArray(teachHomework.getImageUrls(), String.class));
         return Result.ok(teachSendHWDetailVO);
     }
 

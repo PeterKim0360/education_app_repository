@@ -97,4 +97,14 @@ public class StuHomeworkController {
         return stuHomeworkService.getHomeworkDetail(homeworkId);
     }
 
+    /**
+     * 学生订正作业
+     */
+//    @Operation(summary = "学生订正作业",description = "传参：")
+//    @PostMapping("/correct")
+//    public Result<?> correctHomework(@RequestBody StuHomework stuHomework){
+//        log.info("学生订正作业");
+//        return stuHomeworkService.correctHomework(stuHomework);
+//    }
+
 }
