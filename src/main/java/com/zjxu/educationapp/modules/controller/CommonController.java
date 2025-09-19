@@ -42,7 +42,7 @@ public class CommonController {
             String originalFilename = file.getOriginalFilename();
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             //构造新文件名称,防止文件名冲突
-            String objectName = UUID.randomUUID().toString() + extension;
+            String objectName = "updateFiles/"+UUID.randomUUID().toString() + extension;
             try {
                 resList.add(aliOSSUtil.upload(file.getBytes(), objectName));
             } catch (IOException e) {
