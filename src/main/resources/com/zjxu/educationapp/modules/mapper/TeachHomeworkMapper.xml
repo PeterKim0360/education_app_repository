@@ -14,10 +14,13 @@
             <result property="sendTime" column="send_time" />
             <result property="createdTime" column="created_time" />
             <result property="homeworkContent" column="homework_content" />
+            <result property="updateTime" column="update_time" />
+            <result property="logicalDeletion" column="logical_deletion" />
+            <result property="imageUrls" column="image_urls" />
     </resultMap>
 
     <sql id="Base_Column_List">
         homework_id,subject_id,user_id,correct,homework_name,dead_time,
-        send_time,created_time,homework_content
+        send_time,created_time,homework_content,update_time,logical_deletion,image_urls
     </sql>
 </mapper>

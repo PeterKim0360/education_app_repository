@@ -1,12 +1,16 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.entity.StuHomework;
 import com.zjxu.educationapp.modules.entity.Subjects;
 import com.zjxu.educationapp.modules.entity.TeachHomework;
@@ -15,15 +19,19 @@ import com.zjxu.educationapp.modules.mapper.SubjectsMapper;
 import com.zjxu.educationapp.modules.mapper.TeachHomeworkMapper;
 import com.zjxu.educationapp.modules.service.StuHomeworkService;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkCorVO;
+import com.zjxu.educationapp.modules.vo.StuHomeWorkDetailVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkSubVO;
 import com.zjxu.educationapp.modules.vo.StuHomeWorkVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+
+import static net.sf.jsqlparser.parser.feature.Feature.update;
 
 /**
  * @author huawei
@@ -91,25 +99,43 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
      * @param homeworkIds
      * @return
      */
+//
     @Override
+    @Transactional
     public Result<?> delOutTime(List<Long> homeworkIds) {
-        if(homeworkIds.isEmpty()||homeworkIds==null){
+        if (homeworkIds == null || homeworkIds.isEmpty()) {
             log.info("未选择删除的作业");
             return Result.error(ErrorCode.UNSELECTED_FOR_DELETION);
         }
-        long userId = StpUtil.getLoginIdAsLong();
-        int deleted = stuHomeworkMapper.delete(new QueryWrapper<StuHomework>()
-                .in("homework_id", homeworkIds)
-                .eq("user_id", userId)
-                // 子查询判断作业是否过期
-                .apply("homework_id IN (SELECT homework_id FROM teach_homework WHERE dead_time <= NOW())"));
-        if (deleted==0){
-            log.info("作业ID不存在或者都未过期");
-            return Result.error(ErrorCode.DOES_NOT_EXIST_OR_HAS_NOT_EXPIRED);
+
+        for (Long homeworkId : homeworkIds) {
+            // 分步执行查询，避免复杂SQL中的参数绑定问题
+            StuHomework stuHomework = stuHomeworkMapper.selectByUser(homeworkId, StpUtil.getLoginIdAsLong());
+            if (stuHomework == null) {
+                log.info("作业ID不存在");
+                return Result.error(ErrorCode.THE_JOB_DOES_NOT_EXIST);
+            }
+
+            // 检查是否已过期
+            Long count = teachHomeworkMapper.selectCount(new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId, homeworkId)
+                    .le(TeachHomework::getDeadTime, new Date()));
+
+            if (count == null || count <= 0) {
+                log.info("作业未过期");
+                return Result.error(ErrorCode.THE_ASSIGNMENT_IS_NOT_OVERDUE);
+            }
+
+            // 执行更新
+            int update = stuHomeworkMapper.update(homeworkId, StpUtil.getLoginIdAsLong());
+            if (update == 0) {
+                log.info("删除失败");
+                return Result.error(ErrorCode.DELETE_FAILED);
+            }
         }
-        log.info("有{}个不能删除，因为还未截止",homeworkIds.size()-deleted);
         return Result.ok();
     }
+
 
     /**
      * 查看该学科已完成但未批改的作业
@@ -180,6 +206,82 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
             return stuHomeWorkCorVO;
         });
         return Result.ok(stuHomeWorkCorVOIPage);
+    }
+
+    /**
+     * 提交作业
+     *
+     * @param stuHWSubmitDTO
+     * @return
+     */
+    @Override
+    public Result<?> submitHomework(StuHWSubmitDTO stuHWSubmitDTO) {
+        // 检查是否已过期
+        Long count = teachHomeworkMapper.selectCount(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId, stuHWSubmitDTO.getHomeworkId())
+                .le(TeachHomework::getDeadTime, new Date()));
+
+        if (count > 0) {
+            log.info("作业已过期");
+            return Result.error(ErrorCode.THE_ASSIGNMENT_IS_OVERDUE);
+        }
+
+        long userId = StpUtil.getLoginIdAsLong();
+        StuHomework stuHomework = stuHomeworkMapper.selectOne(new LambdaQueryWrapper<StuHomework>()
+                .eq(StuHomework::getHomeworkId, stuHWSubmitDTO.getHomeworkId())
+                .eq(StuHomework::getUserId, userId)
+                .eq(StuHomework::getSubjectId, stuHWSubmitDTO.getSubjectId())
+                .eq(StuHomework::getLogicalDeletion, 1));
+        stuHomework.setCompleteAndCorrect(2);
+        stuHomework.setStudentContent(JSON.toJSONString(stuHWSubmitDTO.getStudentContent()==null?"":stuHWSubmitDTO.getStudentContent()));
+        stuHomework.setSubmitTime(new Date());
+        stuHomeworkMapper.updateALL(stuHomework);
+        return Result.ok();
+    }
+
+    /**
+     * 获取作业详情
+     *
+     * @param homeworkId
+     * @return
+     */
+    @Override
+    public Result<StuHomeWorkDetailVO> getHomeworkDetail(Long homeworkId) {
+        //获取当前学生的作业信息
+        StuHomework stuHomework = stuHomeworkMapper.selectOne(new LambdaQueryWrapper<StuHomework>()
+                .eq(StuHomework::getHomeworkId, homeworkId)
+                .eq(StuHomework::getUserId, StpUtil.getLoginIdAsLong()));
+        //获取老师发布的作业信息
+        TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId, homeworkId));
+        //获取对应科目名
+        Subjects subjects = subjectsMapper.selectById(teachHomework.getSubjectId());
+        String subjectName = subjects != null ? subjects.getSubjectName() : "未知学科";
+
+        StuHomeWorkDetailVO stuHomeWorkDetailVO = new StuHomeWorkDetailVO();
+        stuHomeWorkDetailVO.setSubject(subjectName);
+        BeanUtils.copyProperties(teachHomework, stuHomeWorkDetailVO);
+        stuHomeWorkDetailVO.setImageUrls(teachHomework.getImageUrls()==null?List.of(): JSON.parseArray(teachHomework.getImageUrls(), String.class));
+        //获取当前学生的作业状态
+        Integer completeAndCorrect = stuHomework.getCompleteAndCorrect();
+        if (completeAndCorrect==1){
+            //未完成
+            stuHomeWorkDetailVO.setCompleteAndCorrect(1);
+        } else if (completeAndCorrect == 2) {
+            //已提交但未批改
+            stuHomeWorkDetailVO.setCompleteAndCorrect(2);
+            stuHomeWorkDetailVO.setStudentContent(stuHomework.getStudentContent());
+            stuHomeWorkDetailVO.setSubmitTime(stuHomework.getSubmitTime());
+        }else {
+            //已完成并已批改
+            stuHomeWorkDetailVO.setCompleteAndCorrect(3);
+            stuHomeWorkDetailVO.setStudentContent(stuHomework.getStudentContent());
+            stuHomeWorkDetailVO.setScore(stuHomework.getScore());
+            stuHomeWorkDetailVO.setTeacherComment(stuHomework.getTeacherComment());
+            stuHomeWorkDetailVO.setCorrectTime(stuHomework.getCorrectTime());
+            stuHomeWorkDetailVO.setSubmitTime(stuHomework.getSubmitTime());
+        }
+        return Result.ok(stuHomeWorkDetailVO);
     }
 
 }

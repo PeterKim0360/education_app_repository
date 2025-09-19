@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.util.Date;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -14,6 +16,7 @@ import lombok.Data;
  */
 @TableName(value ="stu_homework")
 @Data
+@Builder
 public class StuHomework {
     /**
      * 作业ID
@@ -54,4 +57,14 @@ public class StuHomework {
      * 批改时间
      */
     private Date correctTime;
+
+    /**
+     * 逻辑删除：0，已删除；1，未删除
+     */
+    private Integer logicalDeletion;
+
+    /**
+     * 老师评语
+     */
+    private String teacherComment;
 }

@@ -3,7 +3,40 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zjxu.educationapp.modules.mapper.StuHomeworkMapper">
-
+    <update id="update">
+        update stu_homework set logical_deletion=0
+        WHERE homework_id=#{homeworkId}
+        <if test="userId!=null">
+            AND user_id= #{userId}
+        </if>
+    </update>
+    <update id="updateALL">
+        update stu_homework set complete_and_correct=#{completeAndCorrect},student_content=#{studentContent},
+            submit_time=#{submitTime},score=#{score},correct_time=#{correctTime},logical_deletion=#{logicalDeletion}
+        WHERE homework_id= #{homeworkId}
+        <if test="userId!=null">
+            AND user_id= #{userId}
+        </if>
+        <if test="subjectId!=null">
+            AND subject_id= #{subjectId}
+        </if>
+    </update>
+    <select id="selectUnComplete" resultType="com.zjxu.educationapp.modules.entity.StuHomework">
+        SELECT * FROM stu_homework
+        WHERE user_id=#{userId}
+        AND complete_and_correct=1
+        <if test="subjectId!=null">
+            AND subject_id=#{subjectId}
+        </if>
+        ORDER BY (SELECT dead_time FROM teach_homework WHERE homework_id = stu_homework.homework_id) ASC
+    </select>
+    <select id="select" resultType="com.zjxu.educationapp.modules.entity.StuHomework">
+        SELECT * FROM stu_homework
+        WHERE homework_id= #{homeworkId}
+        <if test="userId!=null">
+            AND user_id= #{userId}
+        </if>
+    </select>
     <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.StuHomework">
             <result property="homeworkId" column="homework_id" />
             <result property="subjectId" column="subject_id" />
@@ -13,23 +46,15 @@
             <result property="submitTime" column="submit_time" />
             <result property="score" column="score" />
             <result property="correctTime" column="correct_time" />
+        <result property="logicalDeletion" column="logical_deletion" />
+        <result property="teacherComment" column="teacher_comment"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         homework_id,subject_id,user_id,complete_and_correct,student_content,submit_time,
-        score,correct_time
+        score,correct_time,logical_deletion,teacher_comment
     </sql>
-    <select id="selectUnComplete" resultType="com.zjxu.educationapp.modules.entity.StuHomework">
-            SELECT homework_id, subject_id, user_id, complete_and_correct,
-            student_content, submit_time, score, correct_time
-            FROM stu_homework
-            WHERE user_id=#{userId}
-            AND complete_and_correct=1
-            <if test="subjectId!=null">
-                AND subject_id=#{subjectId}
-            </if>
-            ORDER BY (SELECT dead_time FROM teach_homework WHERE homework_id = stu_homework.homework_id) ASC
-    </select>
+
 
 
 

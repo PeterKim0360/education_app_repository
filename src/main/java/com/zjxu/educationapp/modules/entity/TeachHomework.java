@@ -59,4 +59,19 @@ public class TeachHomework {
      * 作业内容
      */
     private String homeworkContent;
+
+    /**
+     * 
+     */
+    private Date updateTime;
+
+    /**
+     * 逻辑删除：0，已删除；1，未删除
+     */
+    private Integer logicalDeletion;
+
+    /**
+     * 图片URL
+     */
+    private String imageUrls;
 }

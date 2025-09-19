@@ -4,6 +4,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.service.CelebrityChatService;
 import com.zjxu.educationapp.modules.vo.ChatRequest;
 import com.zjxu.educationapp.modules.vo.ChatResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,7 @@ public class CelebrityChatController {
      * @param request
      * @return
      */
+    @Operation(summary = "模拟对话",description = "传参：request")
     @PostMapping("/chat")
     public Result<ChatResponse> chatWithCelebrity(@RequestBody ChatRequest request) {
         ChatResponse response = celebrityChatService.chatWithCelebrity(request);
@@ -33,6 +35,7 @@ public class CelebrityChatController {
     /**
      * 初始化对话，让AI发送欢迎消息
      */
+    @Operation(summary = "初始化对话，让AI发送欢迎消息",description = "传参:celebrityId")
     @GetMapping("/init")
     public Result<ChatResponse> initChatByAI(@RequestParam("celebrityId") Long celebrityId){
         ChatResponse chatResponse=celebrityChatService.initByAI(celebrityId);
