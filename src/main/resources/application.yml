@@ -32,6 +32,14 @@ spring:
     multipart:
       max-file-size: 100MB     # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
+mybatis-plus:
+  #配置mapper.xml文件所在目录，只有多模块且mapper所在目录完全相同，才需要用到classpath*；不同模块的mapper必须避免名字重复
+  mapper-locations: classpath:com/zjxu/educationapp/modules/mapper/**/*.xml
+  #扫描entity包，并创建别名，xml中就可以直接写别名，而非全限定包名
+  typeAliases-package: com.zjxu.educationapp.modules.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
   # token 名称（同时也是 cookie 名称）
