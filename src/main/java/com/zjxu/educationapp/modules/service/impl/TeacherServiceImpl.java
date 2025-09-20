@@ -26,7 +26,7 @@ public class TeacherServiceImpl implements TeacherService {
     @Autowired
     private SubjectClassTeachMapper  subjectClassTeachMapper;
     @Autowired
-    private ClassEntityMapper classMapper;
+    private ClassMapper classMapper;
     @Autowired
     private StudentClassMapper studentClassMapper;
     @Autowired
