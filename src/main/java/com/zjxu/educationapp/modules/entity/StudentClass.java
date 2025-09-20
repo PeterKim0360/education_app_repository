@@ -28,4 +28,9 @@ public class StudentClass {
      * 班级ID
      */
     private Long classId;
+
+    /**
+     * 逻辑删除：1为启用，0为删除
+     */
+    private Integer status;
 }

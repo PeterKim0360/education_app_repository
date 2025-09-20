@@ -1,6 +1,6 @@
 package com.zjxu.educationapp.modules.mapper;
 
-import com.zjxu.educationapp.modules.entity.Class;
+import com.zjxu.educationapp.modules.entity.ClassEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Mapper;
 * @Entity com.zjxu.educationapp.modules.entity.Class
 */
 @Mapper
-public interface ClassMapper extends BaseMapper<Class> {
+public interface ClassEntityMapper extends BaseMapper<ClassEntity> {
 
 }
 

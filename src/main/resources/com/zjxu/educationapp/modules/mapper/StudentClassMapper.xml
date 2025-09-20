@@ -8,9 +8,10 @@
             <id property="scId" column="sc_id" />
             <result property="studentId" column="student_id" />
             <result property="classId" column="class_id" />
+        <result property="status" column="status" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        sc_id,student_id,class_id
+        sc_id,student_id,class_id, status
     </sql>
 </mapper>

@@ -79,7 +79,7 @@ public class TeachHomeworkController {
     @Operation(summary = "删除已创建的作业 (含批量)",description = "传参：homeworkId")
     @DeleteMapping("/create/del")
     @Transactional
-    public Result<?> delCreateHW(@RequestParam("homeworkId") List<Long> homeworkIds){
+    public Result<?> delCreateHW(@RequestParam("homeworkIds") List<Long> homeworkIds){
         log.info("删除已创建的作业 (含批量),ID为：{}",homeworkIds);
         return teachHomeworkService.delCreateHW(homeworkIds);
     }
