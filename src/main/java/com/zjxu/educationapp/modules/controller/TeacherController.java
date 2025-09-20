@@ -1,10 +1,9 @@
 package com.zjxu.educationapp.modules.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjxu.educationapp.common.utils.Result;
-import com.zjxu.educationapp.modules.entity.SubjectClassTeach;
-import com.zjxu.educationapp.modules.mapper.SubjectClassTeachMapper;
-import com.zjxu.educationapp.modules.service.SubjectClassTeachService;
 import com.zjxu.educationapp.modules.service.TeacherService;
+import com.zjxu.educationapp.modules.vo.StudentSimpleVO;
 import com.zjxu.educationapp.modules.vo.SubjectsVO;
 import com.zjxu.educationapp.modules.vo.TeacherClassVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +34,7 @@ public class TeacherController {
     /**
      * 获取老师对应学科的上课班级
      */
-    @Operation(summary = "获取老师对应学科的上课班级")
+    @Operation(summary = "获取老师对应学科的上课班级",description = "传参：subjectId")
     @GetMapping("/subject/class")
     public Result<List<TeacherClassVO>> getSubjectClass(@RequestParam("subjectId") Integer subjectId) {
         log.info("获取老师对应学科的上课班级,学科ID：{}",subjectId);
@@ -53,13 +52,27 @@ public class TeacherController {
     }
 
     /**
-     *查看对应班级的学生
+     * 查看对应班级的学生
      */
-//    @Operation(summary = "查看对应班级的学生",description = "传参：classId")
-//    @GetMapping("/stuList")
-//    public Result<IPage<>> stuList(@RequestParam("classId") Long classId) {
-//        log.info("查看对应班级的学生:{}",classId);
-//        return classService.stuList(classId);
-//    }
+    @Operation(summary = "查看对应班级的学生",description = "传参：classId;可选：page,size")
+    @GetMapping("/stuList")
+    public Result<IPage<StudentSimpleVO>> stuList(
+            @RequestParam("classId") Long classId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "8")int size) {
+        log.info("查看对应班级的学生:{}",classId);
+        return teacherService.stuList(classId,page,size);
+    }
+
+    /**
+     * 删除学生
+     */
+    @Operation(summary = "删除学生",description = "传参：")
+    @DeleteMapping("/delete/stus")
+    public Result<?> deleteStus(@RequestParam("stuIds") List<Long> stuIds,
+                                @RequestParam("classId") Long classId) {
+        log.info("删除学生:{}",stuIds);
+        return teacherService.deleteStus(stuIds,classId);
+    }
 
 }

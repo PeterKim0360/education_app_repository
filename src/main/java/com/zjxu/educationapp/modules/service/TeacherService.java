@@ -2,6 +2,7 @@ package com.zjxu.educationapp.modules.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.vo.StudentSimpleVO;
 import com.zjxu.educationapp.modules.vo.TeacherClassVO;
 
 import java.util.List;
@@ -32,8 +33,18 @@ public interface TeacherService {
      * 查看对应班级的学生
      *
      * @param classId
+     * @param page
+     * @param size
      * @return
      */
-    Result<IPage> stuList(Long classId);
+    Result<IPage<StudentSimpleVO>> stuList(Long classId, int page, int size);
 
+    /**
+     * 删除学生
+     *
+     * @param stuIds
+     * @param classId
+     * @return
+     */
+    Result<?> deleteStus(List<Long> stuIds, Long classId);
 }

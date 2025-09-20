@@ -5,17 +5,17 @@ import com.alibaba.fastjson2.JSONObject;
 import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.utils.Result;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.websocket.HandshakeResponse;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpoint;
-import javax.websocket.server.ServerEndpointConfig;
+
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 
 import com.zjxu.educationapp.common.constant.SecurityConstant;
+
+import javax.websocket.HandshakeResponse;
+import javax.websocket.server.HandshakeRequest;
+import javax.websocket.server.ServerEndpointConfig;
 
 
 public class WebSocketConfigurator extends ServerEndpointConfig.Configurator {
