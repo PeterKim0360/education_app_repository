@@ -8,22 +8,27 @@ import java.io.Serializable;
 import lombok.Data;
 
 /**
- * 班级表
- * @TableName class
+ * 
+ * @TableName live_room_class
  */
-@TableName(value ="class")
+@TableName(value ="live_room_class")
 @Data
-public class ClassEntity implements Serializable {
+public class LiveRoomClassEntity implements Serializable {
     /**
-     * 班级ID
+     * 直播间关联班级主键id
      */
     @TableId(type = IdType.AUTO)
+    private Integer liveRoomClassId;
+
+    /**
+     * 班级id
+     */
     private Long classId;
 
     /**
-     * 班级名称
+     * 直播间id
      */
-    private String className;
+    private Integer liveRoomId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

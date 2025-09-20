@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.LiveRoomMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.LiveRoomEntity">
+        <id property="liveId" column="live_id" />
+        <result property="userId" column="user_id" />
+        <result property="subjectId" column="subject_id" />
+        <result property="status" column="status" />
+        <result property="roomName" column="room_name" />
+        <result property="description" column="description" />
+        <result property="streamKey" column="stream_key" />
+        <result property="rtmpUrl" column="rtmp_url" />
+        <result property="viewerCount" column="viewer_count" />
+        <result property="startTime" column="start_time" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <resultMap id="StudentLiveRoomVOMap" type="com.zjxu.educationapp.modules.vo.StudentLiveRoomVO">
+        <result property="liveId" column="live_id"/>
+        <result property="roomName" column="room_name"/>
+        <result property="className" column="class_name"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="subjectName" column="subject_name"/>
+        <result property="startTime" column="start_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        live_id,user_id,subject_id,status,room_name,description,
+        stream_key,rtmp_url,viewer_count,start_time,create_time
+    </sql>
+
+    <!-- 根据学生ID查询直播间信息 -->
+    <select id="getLiveRoomsByStudentId" parameterType="long" resultMap="StudentLiveRoomVOMap">
+        SELECT
+            lr.live_id,
+            lr.room_name,
+            c.class_name,
+            u.user_name AS teacher_name,
+            s.subject_name,
+            lr.start_time,
+            lr.status
+        FROM live_room lr
+                 JOIN live_room_class lrc ON lr.live_id = lrc.live_room_id
+                 JOIN student_class sc ON lrc.class_id = sc.class_id
+                 JOIN class c ON sc.class_id = c.class_id
+                 JOIN user u ON lr.user_id = u.id
+                 JOIN subjects s ON lr.subject_id = s.subject_id
+        WHERE sc.student_id = #{studentId}
+        ORDER BY lr.create_time DESC
+    </select>
+</mapper>

@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -34,6 +36,16 @@ public class UserEntity implements Serializable {
      * 手机号
      */
     private String phone;
+
+    /**
+     * 个人简介
+     */
+    private String profile;
+
+    /**
+     * 身份：0-学生，1-老师
+     */
+    private Integer identity;
 
     /**
      * 密码

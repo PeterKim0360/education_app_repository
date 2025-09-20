@@ -2,7 +2,7 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: dev
+    active: prod
 
   application:
     name: education-app
@@ -83,5 +83,4 @@ education:
     access-key-id: ${OSS_ACCESS_KEY_ID:}
     access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
     bucket-name: classroom-interaction
-
 

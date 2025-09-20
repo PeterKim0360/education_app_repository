@@ -17,6 +17,8 @@ public enum ErrorCode {
     SUBJECT_DO_NOT_EXIST(411,"该学科不存在"),
     THE_JOB_DOES_NOT_EXIST(412,"作业不存在"),
     THE_ASSIGNMENT_IS_OVERDUE(413,"作业已过期"),
+    DOES_NOT_EXIST_OR_HAS_NOT_EXPIRED(409,"作业ID不存在或者都未过期"),
+    PHONE_EXIST(410,"手机号已存在"),
 
     PASSWORD_ERROR(401,"密码错误"),
     PHONE_ERROR(401,"手机号不存在"),
