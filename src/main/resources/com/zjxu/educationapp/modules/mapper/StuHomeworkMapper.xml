@@ -12,7 +12,7 @@
     </update>
     <update id="updateALL">
         update stu_homework set complete_and_correct=#{completeAndCorrect},student_content=#{studentContent},
-            submit_time=#{submitTime},score=#{score},correct_time=#{correctTime},logical_deletion=#{logicalDeletion}
+            submit_time=#{submitTime},score=#{score},correct_time=#{correctTime},logical_deletion=#{logicalDeletion},teacher_comment= #{teacherComment}
         WHERE homework_id= #{homeworkId}
         <if test="userId!=null">
             AND user_id= #{userId}

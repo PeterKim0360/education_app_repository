@@ -43,8 +43,15 @@ public interface TeacherService {
      * 删除学生
      *
      * @param stuIds
+     * @return
+     */
+    Result<?> deleteStus(List<Long> stuIds);
+
+    /**
+     * 添加学生
+     * @param stuIds
      * @param classId
      * @return
      */
-    Result<?> deleteStus(List<Long> stuIds, Long classId);
+    Result<?> addStus(List<Long> stuIds, Long classId);
 }

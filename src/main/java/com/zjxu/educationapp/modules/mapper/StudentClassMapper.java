@@ -1,7 +1,7 @@
 package com.zjxu.educationapp.modules.mapper;
 
-import com.zjxu.educationapp.modules.entity.StudentClass;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zjxu.educationapp.modules.entity.StudentClassEntity;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
 * @createDate 2025-09-17 16:31:28
 * @Entity com.zjxu.educationapp.modules.entity.StudentClass
 */
-public interface StudentClassMapper extends BaseMapper<StudentClass> {
+public interface StudentClassMapper extends BaseMapper<StudentClassEntity> {
     @Select("select student_id from student_class where class_id = #{classId}")
     List<Long> getStudentId(Long classId);
 }
