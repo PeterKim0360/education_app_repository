@@ -1,8 +1,8 @@
 package com.zjxu.educationapp.modules.service;
 
-import com.zjxu.educationapp.modules.vo.ChatHistoryRequest;
-import com.zjxu.educationapp.modules.vo.ChatHistoryResponse;
-import com.zjxu.educationapp.modules.vo.SendMessageRequest;
+import com.zjxu.educationapp.modules.vo.ChatHistoryRequestVO;
+import com.zjxu.educationapp.modules.vo.ChatHistoryResponseVO;
+import com.zjxu.educationapp.modules.vo.SendMessageRequestVO;
 
 /**
  * 用户聊天服务接口
@@ -14,14 +14,14 @@ public interface UserChatService {
      * @param request 查询请求
      * @return 聊天历史响应
      */
-    ChatHistoryResponse getChatHistory(ChatHistoryRequest request);
+    ChatHistoryResponseVO getChatHistory(ChatHistoryRequestVO request);
 
     /**
      * 保存聊天消息
      * @param request 发送消息请求
      * @return 消息ID
      */
-    Long saveMessage(SendMessageRequest request);
+    Long saveMessage(SendMessageRequestVO request);
 
     /**
      * 保存聊天消息（指定发送者）
@@ -29,7 +29,7 @@ public interface UserChatService {
      * @param request 发送消息请求
      * @return 消息ID
      */
-    Long saveMessage(Long fromUserId, SendMessageRequest request);
+    Long saveMessage(Long fromUserId, SendMessageRequestVO request);
 
     /**
      * 标记消息为已读

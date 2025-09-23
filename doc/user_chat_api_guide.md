@@ -146,12 +146,56 @@ POST /api/userChat/markAsRead?fromUserId=123
 ws://localhost:8080/single/chat/{toUserId}
 ```
 
+### 消息格式
+
+#### 发送消息格式
+
+**JSON格式（推荐）：**
+```json
+{
+  "content": "消息内容",
+  "messageType": 1
+}
+```
+
+**纯文本格式（兼容）：**
+```
+直接发送文本字符串
+```
+
+#### 接收消息格式
+
+**成功响应：**
+```json
+{
+  "content": "消息内容",
+  "messageType": 1,
+  "messageId": 12345,
+  "timestamp": 1727075400000,
+  "status": "success"
+}
+```
+
+**错误响应：**
+```json
+{
+  "status": "error",
+  "errorMsg": "错误信息",
+  "timestamp": 1727075400000
+}
+```
+
 ### 使用说明
 
 1. **建立连接**：客户端连接到WebSocket端点，传入要聊天的目标用户ID
-2. **发送消息**：直接发送文本消息到WebSocket连接
-3. **接收消息**：监听WebSocket消息事件接收实时消息
+2. **发送消息**：
+   - **JSON格式**：发送包含content和messageType的JSON对象，支持不同消息类型
+   - **纯文本**：直接发送字符串，会自动识别为文字消息（兼容模式）
+3. **接收消息**：
+   - **成功响应**：包含messageId、timestamp、status等完整信息的JSON对象
+   - **错误响应**：包含错误信息的JSON对象
 4. **自动保存**：所有通过WebSocket发送的消息都会自动保存到数据库
+5. **消息类型**：支持文字(1)、图片(2)、文件(3)三种类型
 
 ### JavaScript 示例
 
@@ -167,13 +211,59 @@ socket.onopen = function(event) {
 // 接收消息
 socket.onmessage = function(event) {
     console.log('收到消息:', event.data);
-    // 处理接收到的消息
+    
+    try {
+        const message = JSON.parse(event.data);
+        if (message.status === 'success') {
+            console.log('消息发送成功，ID:', message.messageId);
+            console.log('消息内容:', message.content);
+            console.log('消息类型:', message.messageType);
+        } else if (message.status === 'error') {
+            console.error('消息发送失败:', message.errorMsg);
+        }
+    } catch (e) {
+        // 兼容旧版本纯文本消息
+        console.log('收到文本消息:', event.data);
+    }
 };
 
-// 发送消息
-function sendMessage(content) {
+// 发送文字消息
+function sendTextMessage(content) {
     if (socket.readyState === WebSocket.OPEN) {
-        socket.send(content);
+        const message = {
+            content: content,
+            messageType: 1  // 1-文字消息
+        };
+        socket.send(JSON.stringify(message));
+    }
+}
+
+// 发送图片消息
+function sendImageMessage(imageUrl) {
+    if (socket.readyState === WebSocket.OPEN) {
+        const message = {
+            content: imageUrl,
+            messageType: 2  // 2-图片消息
+        };
+        socket.send(JSON.stringify(message));
+    }
+}
+
+// 发送文件消息
+function sendFileMessage(fileUrl) {
+    if (socket.readyState === WebSocket.OPEN) {
+        const message = {
+            content: fileUrl,
+            messageType: 3  // 3-文件消息
+        };
+        socket.send(JSON.stringify(message));
+    }
+}
+
+// 兼容发送纯文本（会自动识别为文字消息）
+function sendPlainText(content) {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(content);  // 直接发送字符串
     }
 }
 

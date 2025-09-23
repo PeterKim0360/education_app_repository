@@ -1,10 +1,11 @@
 package com.zjxu.educationapp.modules.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.service.UserChatService;
-import com.zjxu.educationapp.modules.vo.ChatHistoryRequest;
-import com.zjxu.educationapp.modules.vo.ChatHistoryResponse;
-import com.zjxu.educationapp.modules.vo.SendMessageRequest;
+import com.zjxu.educationapp.modules.vo.ChatHistoryRequestVO;
+import com.zjxu.educationapp.modules.vo.ChatHistoryResponseVO;
+import com.zjxu.educationapp.modules.vo.SendMessageRequestVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,9 @@ public class UserChatController {
      */
     @Operation(summary = "查询聊天历史记录", description = "分页查询当前用户与指定用户的聊天历史记录")
     @PostMapping("/history")
-    public Result<ChatHistoryResponse> getChatHistory(@RequestBody ChatHistoryRequest request) {
+    public Result<ChatHistoryResponseVO> getChatHistory(@RequestBody ChatHistoryRequestVO request) {
         try {
-            ChatHistoryResponse response = userChatService.getChatHistory(request);
+            ChatHistoryResponseVO response = userChatService.getChatHistory(request);
             return Result.ok(response);
         } catch (Exception e) {
             log.error("查询聊天历史失败", e);
@@ -49,17 +50,17 @@ public class UserChatController {
      */
     @Operation(summary = "查询聊天历史记录", description = "GET方式分页查询当前用户与指定用户的聊天历史记录")
     @GetMapping("/history")
-    public Result<ChatHistoryResponse> getChatHistory(
+    public Result<ChatHistoryResponseVO> getChatHistory(
             @RequestParam("otherUserId") Long otherUserId,
             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", defaultValue = "20") Integer pageSize) {
         try {
-            ChatHistoryRequest request = new ChatHistoryRequest();
+            ChatHistoryRequestVO request = new ChatHistoryRequestVO();
             request.setOtherUserId(otherUserId);
             request.setPageNum(pageNum);
             request.setPageSize(pageSize);
             
-            ChatHistoryResponse response = userChatService.getChatHistory(request);
+            ChatHistoryResponseVO response = userChatService.getChatHistory(request);
             return Result.ok(response);
         } catch (Exception e) {
             log.error("查询聊天历史失败", e);
@@ -74,7 +75,7 @@ public class UserChatController {
      */
     @Operation(summary = "保存聊天消息", description = "通过HTTP方式保存聊天消息")
     @PostMapping("/send")
-    public Result<Long> sendMessage(@RequestBody SendMessageRequest request) {
+    public Result<Long> sendMessage(@RequestBody SendMessageRequestVO request) {
         try {
             Long messageId = userChatService.saveMessage(request);
             return Result.ok(messageId);
@@ -94,8 +95,8 @@ public class UserChatController {
     public Result<Integer> markMessagesAsRead(@RequestParam("fromUserId") Long fromUserId) {
         try {
             // 获取当前用户ID作为接收者
-            cn.dev33.satoken.stp.StpUtil.checkLogin();
-            Long currentUserId = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            StpUtil.checkLogin();
+            Long currentUserId = StpUtil.getLoginIdAsLong();
             
             Integer count = userChatService.markMessagesAsRead(fromUserId, currentUserId);
             return Result.ok(count);

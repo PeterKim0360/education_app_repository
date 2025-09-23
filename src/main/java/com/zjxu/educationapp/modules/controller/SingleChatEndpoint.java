@@ -1,5 +1,6 @@
 package com.zjxu.educationapp.modules.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.zjxu.educationapp.common.config.WebSocketConfigurator;
 import com.zjxu.educationapp.common.constant.ErrorCode;
@@ -7,7 +8,8 @@ import com.zjxu.educationapp.common.constant.SecurityConstant;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.service.UserService;
 import com.zjxu.educationapp.modules.service.UserChatService;
-import com.zjxu.educationapp.modules.vo.SendMessageRequest;
+import com.zjxu.educationapp.modules.vo.SendMessageRequestVO;
+import com.zjxu.educationapp.modules.vo.WebSocketMessageVO;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,6 @@ public class SingleChatEndpoint {
     /*
     当前类的实例有Tomcat容器创建，因此即使标注了@Component也不被Spring容器管理，因此不能直接使用@Autowired标注在字段上（静态字段不能也不能使用此注解）
      */
-    //TODO 修改Service
     private static UserService userService;
     private static UserChatService userChatService;
 
@@ -38,7 +39,6 @@ public class SingleChatEndpoint {
 
 //    private Long fromUserId;
 
-    //TODO 关于多用户的会话，单例问题
     private String sessionKey;
     private String reverseSessionKey;
     
@@ -87,15 +87,31 @@ public class SingleChatEndpoint {
             // 获取发送者ID
             long fromUserId = Long.parseLong(session.getUserProperties().get(SecurityConstant.USER_ID).toString());
             
+            // 解析消息内容和类型
+            WebSocketMessageVO messageInfo = parseMessage(message);
+            
             // 保存消息到数据库
-            saveMessageToDatabase(fromUserId, toUserId, message);
+            Long messageId = saveMessageToDatabase(fromUserId, toUserId, messageInfo);
+            
+            // 构建响应消息（包含消息ID和发送时间等信息）
+            WebSocketMessageVO responseMessage = WebSocketMessageVO.builder()
+                    .content(messageInfo.getContent())
+                    .messageType(messageInfo.getMessageType())
+                    .messageId(messageId)
+                    .timestamp(System.currentTimeMillis())
+                    .status("success")
+                    .build();
             
             // 实时发送消息
-            sendRealTimeMessage(message, session);
+            sendRealTimeMessage(JSONObject.toJSONString(responseMessage), session);
         } catch (IOException e) {
             log.error("发送消息失败，onMessage()", e);
+            // 发送错误消息给客户端
+            sendErrorMessage(session, "发送消息失败");
         } catch (Exception e) {
             log.error("处理消息失败", e);
+            // 发送错误消息给客户端
+            sendErrorMessage(session, "处理消息失败: " + e.getMessage());
         }
     }
 
@@ -146,24 +162,73 @@ public class SingleChatEndpoint {
      * 保存消息到数据库
      * @param fromUserId 发送者ID
      * @param toUserId 接收者ID
-     * @param content 消息内容
+     * @param messageInfo 消息信息
+     * @return 消息ID
      */
-    private void saveMessageToDatabase(Long fromUserId, Long toUserId, String content) {
+    private Long saveMessageToDatabase(Long fromUserId, Long toUserId, WebSocketMessageVO messageInfo) {
         try {
             if (userChatService != null) {
-                SendMessageRequest request = new SendMessageRequest();
+                SendMessageRequestVO request = new SendMessageRequestVO();
                 request.setToUserId(toUserId);
-                request.setContent(content);
-                request.setMessageType(1); // 默认文字消息
+                request.setContent(messageInfo.getContent());
+                request.setMessageType(messageInfo.getMessageType());
                 
                 // 使用重载方法直接传递发送者ID
                 Long messageId = userChatService.saveMessage(fromUserId, request);
                 log.info("消息保存成功，messageId: {}", messageId);
+                return messageId;
             } else {
                 log.warn("UserChatService未注入，无法保存消息");
+                return null;
             }
         } catch (Exception e) {
             log.error("保存消息到数据库失败", e);
+            throw new RuntimeException("保存消息失败", e);
+        }
+    }
+
+    /**
+     * 解析WebSocket消息
+     * @param message 原始消息
+     * @return 解析后的消息信息
+     */
+    private WebSocketMessageVO parseMessage(String message) {
+        try {
+            // 尝试解析为JSON对象
+            WebSocketMessageVO messageInfo = JSONObject.parseObject(message, WebSocketMessageVO.class);
+            if (messageInfo != null && messageInfo.getContent() != null) {
+                // 设置默认值
+                if (messageInfo.getMessageType() == null) {
+                    messageInfo.setMessageType(1); // 默认文字消息
+                }
+                return messageInfo;
+            }
+        } catch (Exception e) {
+            log.debug("消息不是JSON格式，当作普通文本处理: {}", message);
+        }
+        
+        // 如果不是JSON格式，当作普通文字消息处理
+        return WebSocketMessageVO.builder()
+                .content(message)
+                .messageType(1)
+                .build();
+    }
+
+    /**
+     * 发送错误消息给客户端
+     * @param session WebSocket会话
+     * @param errorMsg 错误消息
+     */
+    private void sendErrorMessage(Session session, String errorMsg) {
+        try {
+            WebSocketMessageVO errorMessage = WebSocketMessageVO.builder()
+                    .status("error")
+                    .errorMsg(errorMsg)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            session.getBasicRemote().sendText(JSONObject.toJSONString(errorMessage));
+        } catch (IOException e) {
+            log.error("发送错误消息失败", e);
         }
     }
 

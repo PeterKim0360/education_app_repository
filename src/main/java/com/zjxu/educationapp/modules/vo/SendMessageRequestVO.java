@@ -3,10 +3,10 @@ package com.zjxu.educationapp.modules.vo;
 import lombok.Data;
 
 /**
- * 发送消息请求
+ * 发送消息请求VO
  */
 @Data
-public class SendMessageRequest {
+public class SendMessageRequestVO {
 
     /**
      * 接收者ID

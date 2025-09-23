@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 聊天历史查询响应
+ * 聊天历史查询响应VO
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChatHistoryResponse {
+public class ChatHistoryResponseVO {
 
     /**
      * 聊天记录列表

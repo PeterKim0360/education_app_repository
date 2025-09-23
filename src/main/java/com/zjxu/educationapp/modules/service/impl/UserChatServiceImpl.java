@@ -30,7 +30,7 @@ public class UserChatServiceImpl implements UserChatService {
     private UserMapper userMapper;
 
     @Override
-    public ChatHistoryResponse getChatHistory(ChatHistoryRequest request) {
+    public ChatHistoryResponseVO getChatHistory(ChatHistoryRequestVO request) {
         // 获取当前登录用户ID
         Long currentUserId = StpUtil.getLoginIdAsLong();
         
@@ -78,14 +78,14 @@ public class UserChatServiceImpl implements UserChatService {
         Integer totalPages = (int) Math.ceil((double) total / request.getPageSize());
         Boolean hasMore = request.getPageNum() < totalPages;
         
-        return ChatHistoryResponse.builder()
+        return ChatHistoryResponseVO.builder()
                 .messages(messageVOs)
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
                 .total(total)
                 .totalPages(totalPages)
                 .hasMore(hasMore)
-                .otherUser(ChatHistoryResponse.UserInfoVO.builder()
+                .otherUser(ChatHistoryResponseVO.UserInfoVO.builder()
                         .userId(otherUser.getId())
                         .userName(otherUser.getUserName())
                         .avatarUrl(otherUser.getAvatarUrl())
@@ -95,14 +95,14 @@ public class UserChatServiceImpl implements UserChatService {
     }
 
     @Override
-    public Long saveMessage(SendMessageRequest request) {
+    public Long saveMessage(SendMessageRequestVO request) {
         // 获取当前登录用户ID
         Long currentUserId = StpUtil.getLoginIdAsLong();
         return saveMessage(currentUserId, request);
     }
 
     @Override
-    public Long saveMessage(Long fromUserId, SendMessageRequest request) {
+    public Long saveMessage(Long fromUserId, SendMessageRequestVO request) {
         // 生成会话ID
         String conversationId = generateConversationId(fromUserId, request.getToUserId());
         

@@ -3,10 +3,10 @@ package com.zjxu.educationapp.modules.vo;
 import lombok.Data;
 
 /**
- * 聊天历史查询请求
+ * 聊天历史查询请求VO
  */
 @Data
-public class ChatHistoryRequest {
+public class ChatHistoryRequestVO {
 
     /**
      * 对方用户ID（聊天对象）
