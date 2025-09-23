@@ -4,38 +4,44 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import java.util.Date;
 import lombok.Data;
 
 /**
- * 学科-班级-教师表
- * @TableName subject_class_teach
+ * 
+ * @TableName course_history
  */
-@TableName(value ="subject_class_teach")
+@TableName(value ="course_history")
 @Data
-public class SubjectClassTeach {
+public class CourseHistory {
     /**
-     * 
+     * 历史课堂记录
      */
     @TableId(type = IdType.AUTO)
-    private Long scId;
+    private Integer id;
 
     /**
-     * 学科ID
+     * 对应的课程ID
      */
     private Integer subjectId;
 
     /**
-     * 班级ID
+     * 课件，可以是多个，以分号隔开
      */
-    private Long classId;
+    private String fileUrl;
 
     /**
-     * 老师ID
+     * 文件描述
      */
-    private Long teachId;
+    private String fileDescription;
 
     /**
-     * 上课状态：0，未上课；1，正在上课
+     * 教师ID
      */
-    private Integer status;
+    private Long teacherId;
+
+    /**
+     * 上传时间
+     */
+    private Date uploadTime;
 }

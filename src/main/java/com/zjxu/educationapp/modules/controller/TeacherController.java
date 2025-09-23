@@ -22,6 +22,7 @@ import java.util.List;
 public class TeacherController {
     @Autowired
     private TeacherService teacherService;
+
     /**
      * 获取老师对应的学科
      * @return
@@ -87,5 +88,25 @@ public class TeacherController {
                              @RequestParam("classId") Long classId) {
         log.info("添加学生:{}",stuIds);
         return teacherService.addStus(stuIds,classId);
+    }
+
+    /**
+     * 开始上课
+     */
+    @Operation(summary = "开始上课",description = "传参：subjectId")
+    @PostMapping("/start/class")
+    public Result<?> startClass(@RequestParam("subjectId") Integer subjectId) {
+        log.info("开始上课");
+        return teacherService.startClass(subjectId);
+    }
+
+    /**
+     * 结束上课
+     */
+    @Operation(summary = "结束上课",description = "传参：subjectId")
+    @PostMapping("/end/class")
+    public Result<?> endClass(@RequestParam("subjectId") Integer subjectId) {
+        log.info("结束上课");
+        return teacherService.endClass(subjectId);
     }
 }

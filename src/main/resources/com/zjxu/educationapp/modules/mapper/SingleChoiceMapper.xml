@@ -12,10 +12,12 @@
             <result property="optionD" column="option_d" />
             <result property="correctOption" column="correct_option" />
             <result property="userAnswer" column="user_answer" />
+        <result property="subjectId" column="subject_id" />
+        <result property="userId" column="user_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
         question_id,option_a,option_b,option_c,option_d,correct_option,
-        user_answer
+        user_answer,subject_id,user_id
     </sql>
 </mapper>

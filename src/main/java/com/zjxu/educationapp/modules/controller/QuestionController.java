@@ -9,10 +9,10 @@ import com.zjxu.educationapp.common.utils.MpListPageUtil;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.ErrorQuestionDTO;
 import com.zjxu.educationapp.modules.entity.*;
+import com.zjxu.educationapp.modules.mapper.SingleChoiceMapper;
 import com.zjxu.educationapp.modules.service.*;
 import com.zjxu.educationapp.modules.service.impl.QuestionService;
-import com.zjxu.educationapp.modules.vo.ErrorQuestionsVO;
-import com.zjxu.educationapp.modules.vo.QuestionResult;
+import com.zjxu.educationapp.modules.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +41,7 @@ public class QuestionController {
     @Autowired
     private SubjectsService subjectsService;
     private final QuestionService questionService;
+
 
     public QuestionController(QuestionService questionService) {
         this.questionService = questionService;
@@ -138,6 +139,55 @@ public class QuestionController {
     @GetMapping("/AI/questions")
     public Result<List<String>> queryAIType(){
         return subjectsService.queryAIType();
+    }
+
+    /**
+     * 查看单选题
+     */
+    @Operation(summary = "查看单选题",description = "传参：subjectId;可选：page,size")
+    @GetMapping("/singleChoice")
+    public Result<IPage<SingleChoiceVO>> querySingleChoice(
+            @RequestParam("subjectId") int subjectId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "5") int size){
+        log.info("查看单选题");
+        return errorQuestionsService.querySingleChoice(subjectId,page,size);
+    }
+
+    /**
+     * 查看多选题
+     */
+    @Operation(summary = "查看多选题",description = "传参：subjectId;可选：page,size")
+    @GetMapping("/multipleChoice")
+    public Result<IPage<MultipleChoiceVO>> queryMultipleChoice(@RequestParam("subjectId") Integer subjectId,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "5") int size){
+        log.info("查看多选题");
+        return errorQuestionsService.queryMultipleChoice(subjectId,page,size);
+    }
+
+    /**
+     * 查看判断题
+     */
+    @Operation(summary = "查看判断题",description = "传参：subjectId;可选：page,size")
+    @GetMapping("/trueFalse")
+    public Result<IPage<TrueFalseVO>> queryTrueFalse(@RequestParam("subjectId") Integer subjectId,
+                                                     @RequestParam(defaultValue = "1") int page,
+                                                     @RequestParam(defaultValue = "5") int size){
+        log.info("查看判断题");
+        return errorQuestionsService.queryTrueFalse(subjectId,page,size);
+    }
+
+    /**
+     * 查看填空题
+     */
+    @Operation(summary = "查看填空题",description = "传参：subjectId;可选：page,size")
+    @GetMapping("/fillInBlank")
+    public Result<IPage<FillInBlankVO>> queryFillInBlank(@RequestParam("subjectId") Integer subjectId,
+                                                         @RequestParam(defaultValue = "1") int page,
+                                                         @RequestParam(defaultValue = "5") int size){
+        log.info("查看填空题");
+        return errorQuestionsService.queryFillInBlank(subjectId,page,size);
     }
 
 }

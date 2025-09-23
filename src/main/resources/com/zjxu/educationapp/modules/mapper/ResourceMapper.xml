@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.ResourceMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.Resource">
+            <id property="id" column="id" />
+            <result property="title" column="title" />
+            <result property="description" column="description" />
+            <result property="coverUrl" column="cover_url" />
+            <result property="type" column="type" />
+            <result property="duration" column="duration" />
+            <result property="author" column="author" />
+            <result property="viewCount" column="view_count" />
+            <result property="likeCount" column="like_count" />
+            <result property="fileUrl" column="file_url" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+        <result property="status" column="status" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,title,description,cover_url,type,duration,
+        author,view_count,like_count,file_url,create_time,
+        update_time, status
+    </sql>
+</mapper>

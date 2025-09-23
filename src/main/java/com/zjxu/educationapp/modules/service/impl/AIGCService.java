@@ -1,9 +1,6 @@
 package com.zjxu.educationapp.modules.service.impl;
 
-import java.net.URLDecoder;
-import com.alibaba.dashscope.aigc.generation.Generation;
-import com.alibaba.dashscope.aigc.generation.GenerationParam;
-import com.alibaba.dashscope.aigc.generation.GenerationResult;
+import com.alibaba.dashscope.aigc.generation.*;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.ApiException;
@@ -14,10 +11,11 @@ import com.zjxu.educationapp.common.config.DashScopeConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.Base64;  // 添加这行导入
+
+import org.springframework.util.StringUtils;
+import com.alibaba.dashscope.aigc.generation.Generation;
 
 /**
  * 阿里云百炼API调用服务类，提供通用的AI生成能力
@@ -65,9 +63,11 @@ public class AIGCService {
         // 构建调用参数
         GenerationParam param = GenerationParam.builder()
                 .apiKey(apiKey)  // 从配置获取API Key
-                .model("qwen-plus")  // 可根据需要切换模型（如"qwen-turbo"）
+                .model("qwen3-coder-plus")  // 可根据需要切换模型
                 .messages(Arrays.asList(systemMessage, userMessage))  // 消息列表
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)  // 返回格式为MESSAGE
+                .maxTokens(1024)
+                .temperature(0.7F)
                 .build();
 
         // 调用API并返回结果
@@ -76,73 +76,72 @@ public class AIGCService {
     }
 
     /**
-     * 简化调用方法（使用默认系统提示）
-     * @param userPrompt 用户提示（具体生成需求）
-     * @return AI生成的文本内容
-     * @throws ApiException 同上
-     * @throws NoApiKeyException 同上
-     * @throws InputRequiredException 同上
-     */
-    public String callAI(String userPrompt)
-            throws ApiException, NoApiKeyException, InputRequiredException {
-        // 默认系统提示：通用助手角色
-        String defaultSystemPrompt = "你是一个专业的内容生成助手，能严格按照用户要求的格式生成内容，内容准确、简洁。";
-        return callAI(defaultSystemPrompt, userPrompt);
-    }
-
-    /**
-     * 调用AI生成内容（支持复杂图片输入场景）
+     * 调用AI生成内容（支持直接传递图片数据）
+     *
      * @param systemPrompt 系统提示（定义AI角色和行为规范）
-     * @param userPrompt 用户提示（具体生成需求）
-     * @param imageUrls 图片URL列表
+     * @param userPrompt   用户提示（具体生成需求）
+     * @param imageDatas   图片数据列表
+     * @param imageFormats 图片格式列表
      * @return AI生成的文本内容
-     * @throws ApiException API调用异常
-     * @throws NoApiKeyException 缺少API Key异常
+     * @throws ApiException        API调用异常
+     * @throws NoApiKeyException   缺少API Key异常
      * @throws InputRequiredException 输入参数不完整异常
      */
-    public String callAIWithImages(String systemPrompt, String userPrompt, List<String> imageUrls)
+    public String callAIWithImageDatas(String systemPrompt, String userPrompt, List<byte[]> imageDatas, List<String> imageFormats)
             throws ApiException, NoApiKeyException, InputRequiredException {
 
-        // 创建生成器实例
+        // 参数校验
+        if (!StringUtils.hasText(systemPrompt) || !StringUtils.hasText(userPrompt)) {
+            throw new InputRequiredException("系统提示和用户提示不能为空");
+        }
+        if (imageDatas == null || imageDatas.isEmpty()) {
+            throw new InputRequiredException("图片数据列表不能为空");
+        }
+        if (imageDatas.size() != imageFormats.size()) {
+            throw new InputRequiredException("图片数据和格式列表大小不匹配");
+        }
+
         Generation generation = new Generation();
 
-        // 构建系统消息（定义AI角色）
+        // 系统消息
         Message systemMessage = Message.builder()
                 .role(Role.SYSTEM.getValue())
                 .content(systemPrompt)
                 .build();
 
-        // 构建用户消息内容
-        List<Map<String, Object>> contentList = new ArrayList<>();
+        // 构建多模态内容（使用新版本支持的格式）
+        List<Map<String, String>> contentList = new ArrayList<>();
 
         // 添加文本内容
-        Map<String, Object> textContent = new HashMap<>();
+        Map<String, String> textContent = new HashMap<>();
         textContent.put("type", "text");
         textContent.put("text", userPrompt);
         contentList.add(textContent);
 
-        // 添加图片内容（处理URL编码）
-        if (imageUrls != null && !imageUrls.isEmpty()) {
-            for (String imageUrl : imageUrls) {
-                // 标准化图片URL
-                String standardizedUrl = standardizeImageUrl(imageUrl);
+        // 添加图片内容（备用格式）
+        for (int i = 0; i < imageDatas.size(); i++) {
+            byte[] imageData = imageDatas.get(i);
+            String format = imageFormats.get(i).toLowerCase();
 
-                // 添加调试日志
-                log.info("处理图片URL - 原始: {}, 标准化: {}", imageUrl, standardizedUrl);
-
-                // 可选：验证URL可访问性
-                // if (!isImageUrlAccessible(standardizedUrl)) {
-                //     log.warn("图片URL不可访问: {}", standardizedUrl);
-                // }
-
-                Map<String, Object> imageContent = new HashMap<>();
-                imageContent.put("type", "image_url");
-                Map<String, String> imageUrlMap = new HashMap<>();
-                imageUrlMap.put("url", standardizedUrl);
-                imageContent.put("image_url", imageUrlMap);
-                contentList.add(imageContent);
+            // 标准化图片格式
+            if ("jpg".equals(format)) format = "jpeg";
+            if (!Arrays.asList("jpeg", "png", "gif", "webp").contains(format)) {
+                format = "jpeg";
             }
+
+            // 生成base64图片数据
+            String base64Image = Base64.getEncoder().encodeToString(imageData);
+
+            // 最简格式（直接放在同一层级）
+            Map<String, String> imageContent = new HashMap<>();
+            imageContent.put("type", "image_url");
+            imageContent.put("url", "data:image/" + format + ";base64," + base64Image);
+            contentList.add(imageContent);
+
+            log.info("添加图片数据，格式: {}, 大小: {} bytes, base64长度: {}",
+                    format, imageData.length, base64Image.length());
         }
+
 
         // 构建用户消息
         Message userMessage = Message.builder()
@@ -150,79 +149,18 @@ public class AIGCService {
                 .content(JSON.toJSONString(contentList))
                 .build();
 
-        // 构建调用参数（使用支持视觉的模型）
+        // 调用参数
         GenerationParam param = GenerationParam.builder()
                 .apiKey(apiKey)
-                .model("qwen-vl-plus")  // 使用支持视觉的模型
+                .model("qwen-vl-plus")
                 .messages(Arrays.asList(systemMessage, userMessage))
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
+                .temperature(0.7F)
+                .topP(0.8)
                 .build();
 
-        // 调用API并返回结果
         GenerationResult result = generation.call(param);
         return result.getOutput().getChoices().get(0).getMessage().getContent();
-    }
-
-    /**
-     * 标准化图片URL（处理编码问题）
-     * @param url 原始URL
-     * @return 标准化的URL
-     */
-    private String standardizeImageUrl(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            // 保存原始URL用于日志
-            String originalUrl = url;
-
-            // 多次解码直到URL不再变化（处理可能的多重编码）
-            String decodedUrl = url;
-            String previousUrl;
-            int maxDecodeAttempts = 5; // 最大解码尝试次数
-            int decodeAttempts = 0;
-
-            do {
-                previousUrl = decodedUrl;
-                try {
-                    decodedUrl = java.net.URLDecoder.decode(previousUrl, StandardCharsets.UTF_8.name());
-                    decodeAttempts++;
-                } catch (Exception e) {
-                    // 解码失败，跳出循环
-                    break;
-                }
-            } while (!decodedUrl.equals(previousUrl) && decodeAttempts < maxDecodeAttempts);
-
-            log.debug("URL标准化: {} -> {}", originalUrl, decodedUrl);
-            return decodedUrl;
-
-        } catch (Exception e) {
-            // 如果处理失败，记录日志并返回原始URL
-            log.warn("URL标准化失败，使用原始URL: {}", url, e);
-            return url;
-        }
-    }
-    /**
-     * 验证图片URL是否可访问
-     * @param imageUrl 图片URL
-     * @return 是否可访问
-     */
-    public boolean isImageUrlAccessible(String imageUrl) {
-        try {
-            java.net.URL url = new java.net.URL(imageUrl);
-            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("HEAD");
-            connection.setConnectTimeout(5000); // 5秒连接超时
-            connection.setReadTimeout(5000);    // 5秒读取超时
-            int responseCode = connection.getResponseCode();
-            boolean accessible = responseCode == 200;
-            log.debug("图片URL {} 可访问性: {}", imageUrl, accessible);
-            return accessible;
-        } catch (Exception e) {
-            log.warn("检查图片URL可访问性失败: {}", imageUrl, e);
-            return false;
-        }
     }
 
 

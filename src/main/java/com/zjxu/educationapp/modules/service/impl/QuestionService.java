@@ -323,16 +323,19 @@ public class QuestionService {
 
         // 5. 构造 AI 提示词
         StringBuilder promptBuilder = new StringBuilder();
-        promptBuilder.append("请生成").append(subjectName).append("的错题分析总结报告：\n");
+        promptBuilder.append("请快速生成").append(subjectName).append("的错题分析总结报告：\n");
         promptBuilder.append("1. 题型分布：").append(questionTypeCount).append("\n");
         promptBuilder.append("2. 总错题数：").append(errorQuestionList.size()).append("\n");
-        promptBuilder.append("3. 错题详情：\n");
-        for (ErrorDetail detail : errorDetails) {
+        promptBuilder.append("3. 仅分析前5道错题详情（节省处理时间）：\n");
+
+        // 只分析前5道错题，减少处理负担
+        int limit = Math.min(5, errorDetails.size());
+        for (int i = 0; i < limit; i++) {
+            ErrorDetail detail = errorDetails.get(i);
             promptBuilder.append("- 题型：").append(detail.getQuestionType())
-                    .append("，题目：").append(detail.getQuestionText())
                     .append("，掌握状态：").append(detail.getMasteryStatus()).append("\n");
         }
-        promptBuilder.append("要求：分析高频错误题型、潜在知识漏洞，给出至少3条针对性学习建议。");
+        promptBuilder.append("专业分析高频错误题型，给出最多4条简洁但不重复的有效学习建议。");
 
         // 6. 调用 AI 生成分析结果
         try {

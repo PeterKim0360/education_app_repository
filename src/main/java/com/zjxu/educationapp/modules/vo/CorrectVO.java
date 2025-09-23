@@ -10,5 +10,5 @@ public class CorrectVO {
     private Long studentId;
     private String studentName;
     private String teacherComment;
-    private BigDecimal score;
+    private Double score;
 }

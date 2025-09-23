@@ -18,7 +18,6 @@ public class TrueFalse {
     /**
      * 关联错题主表的question_id
      */
-    @TableId
     private Integer questionId;
 
     /**
@@ -29,11 +28,20 @@ public class TrueFalse {
     /**
      * 用户答案（0：错误，1：正确）
      */
-    @TableField(value = "user_answer")
-    private String TrueFalseUserAnswer;
+    private String userAnswer;
 
     /**
      * 选项
      */
     private String options;
+
+    /**
+     * 学科ID
+     */
+    private Integer subjectId;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
 }

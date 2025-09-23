@@ -9,9 +9,11 @@
             <result property="options" column="options" />
             <result property="correctOptions" column="correct_options" />
             <result property="userAnswer" column="user_answer" />
+        <result property="subjectId" column="subject_id" />
+        <result property="userId" column="user_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        question_id,options,correct_options,user_answer
+        question_id,options,correct_options,user_answer,subject_id,user_id
     </sql>
 </mapper>

@@ -21,7 +21,7 @@ public class StuHomeWorkDetailVO {
     //提交时间（仅 status >= 2 时有）
     private Date submitTime;
     // 分数（仅 status == 3 时有）
-    private BigDecimal score;
+    private Double score;
     // 教师评语（仅 status == 3 时有）
     private String teacherComment;
     //批改时间（仅 status == 3 时有）

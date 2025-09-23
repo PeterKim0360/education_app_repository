@@ -179,5 +179,51 @@ public class TeacherServiceImpl implements TeacherService {
         return Result.ok();
     }
 
+    /**
+     * 开始上课
+     *
+     * @param subjectId
+     * @return
+     */
+    @Override
+    public Result<?> startClass(Integer subjectId) {
+        long teacherId = StpUtil.getLoginIdAsLong();
+        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
+                .eq(SubjectClassTeach::getSubjectId, subjectId)
+                .eq(SubjectClassTeach::getTeachId, teacherId)
+                .eq(SubjectClassTeach::getStatus, 0));
+        for (SubjectClassTeach subjectClassTeach : subjectClassTeaches) {
+            subjectClassTeach.setStatus(1);
+            subjectClassTeachMapper.update(subjectClassTeach,new LambdaQueryWrapper<SubjectClassTeach>()
+                    .eq(SubjectClassTeach::getSubjectId, subjectId)
+                    .eq(SubjectClassTeach::getTeachId, teacherId)
+                    .eq(SubjectClassTeach::getClassId,subjectClassTeach.getClassId()));
+        }
+        return Result.ok();
+    }
+
+    /**
+     * 结束上课
+     *
+     * @param subjectId
+     * @return
+     */
+    @Override
+    public Result<?> endClass(Integer subjectId) {
+        long teacherId = StpUtil.getLoginIdAsLong();
+        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
+                .eq(SubjectClassTeach::getSubjectId, subjectId)
+                .eq(SubjectClassTeach::getTeachId, teacherId)
+                .eq(SubjectClassTeach::getStatus, 1));
+        for (SubjectClassTeach subjectClassTeach : subjectClassTeaches) {
+            subjectClassTeach.setStatus(0);
+            subjectClassTeachMapper.update(subjectClassTeach,new LambdaQueryWrapper<SubjectClassTeach>()
+                    .eq(SubjectClassTeach::getSubjectId, subjectId)
+                    .eq(SubjectClassTeach::getTeachId, teacherId)
+                    .eq(SubjectClassTeach::getClassId,subjectClassTeach.getClassId()));
+        }
+        return Result.ok();
+    }
+
 
 }

@@ -18,7 +18,6 @@ public class SingleChoice {
     /**
      * 关联错题主表的question_id
      */
-    @TableId
     private Integer questionId;
 
     /**
@@ -50,4 +49,14 @@ public class SingleChoice {
      * 用户答案
      */
     private String userAnswer;
+
+    /**
+     * 学科ID
+     */
+    private Integer subjectId;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
 }

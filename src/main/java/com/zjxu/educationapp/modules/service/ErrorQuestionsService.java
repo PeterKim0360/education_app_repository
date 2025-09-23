@@ -5,7 +5,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.ErrorQuestionDTO;
 import com.zjxu.educationapp.modules.entity.ErrorQuestions;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zjxu.educationapp.modules.vo.ErrorQuestionsVO;
+import com.zjxu.educationapp.modules.vo.*;
 
 /**
 * @author huawei
@@ -35,4 +35,31 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
      * @return
      */
     Result<?> ErrorQuestionDel(int questionId);
+
+    /**
+     * 单选题查询
+     * @param subjectId
+     * @param page
+     * @param size
+     * @return
+     */
+    Result<IPage<SingleChoiceVO>> querySingleChoice(int subjectId, int page, int size);
+
+    /**
+     * 多选题查询
+     * @return
+     */
+    Result<IPage<MultipleChoiceVO>> queryMultipleChoice(Integer subjectId, int page, int size);
+
+    /**
+     * 判断题查询
+     * @return
+     */
+    Result<IPage<TrueFalseVO>> queryTrueFalse(Integer subjectId, int page, int size);
+
+    /**
+     * 填空题查询
+     * @return
+     */
+    Result<IPage<FillInBlankVO>> queryFillInBlank(Integer subjectId, int page, int size);
 }

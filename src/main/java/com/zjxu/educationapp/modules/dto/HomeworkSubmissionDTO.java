@@ -9,6 +9,6 @@ public class HomeworkSubmissionDTO {
     private Long homeworkId;
     private Long studentId;
     private String teacherComment;
-    private BigDecimal score;
+    private Double score;
 
 }

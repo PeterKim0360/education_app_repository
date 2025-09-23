@@ -18,7 +18,6 @@ public class MultipleChoice {
     /**
      * 关联错题主表的question_id
      */
-    @TableId
     private Integer questionId;
 
     /**
@@ -35,4 +34,14 @@ public class MultipleChoice {
      * 用户选择的答案（JSON格式）
      */
     private String userAnswer;
+
+    /**
+     * 学科ID
+     */
+    private Integer subjectId;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
 }

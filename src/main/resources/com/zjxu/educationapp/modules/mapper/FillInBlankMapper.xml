@@ -8,9 +8,11 @@
             <id property="questionId" column="question_id" />
             <result property="correctAnswers" column="correct_answers" />
             <result property="userAnswers" column="user_answers" />
+        <result property="subjectId" column="subject_id" />
+        <result property="userId" column="user_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        question_id,correct_answers,user_answers
+        question_id,correct_answers,user_answers,subject_id,user_id
     </sql>
 </mapper>
