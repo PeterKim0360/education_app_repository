@@ -2,7 +2,7 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: prod
+    active: dev
 
   application:
     name: education-app
@@ -32,6 +32,12 @@ spring:
     multipart:
       max-file-size: 100MB     # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-plus
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
   # token 名称（同时也是 cookie 名称）
