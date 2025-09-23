@@ -68,9 +68,11 @@ public class QuestionController {
      */
     @Operation(summary = "AI 生成该学科错题报告",description = "传参：subjectId")
     @GetMapping("/summary")
-    public Result<QuestionResultSummary> generateSummary(@RequestParam("subjectId") int subjectId){
+    public Result<QuestionResultSummary> generateSummary(
+            @RequestParam("subjectId") int subjectId,
+            @RequestParam("questionIds") List<Integer> questionIds){
         log.info("AI 获取该学科错题总结");
-        return questionService.summary(subjectId);
+        return questionService.summary(subjectId,questionIds);
     }
 
     /**

@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -74,4 +76,5 @@ public class TeachHomework {
      * 图片URL
      */
     private String imageUrls;
+
 }

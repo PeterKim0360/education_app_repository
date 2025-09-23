@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.entity.ClassEntity;
@@ -12,6 +13,7 @@ import com.zjxu.educationapp.modules.service.TeacherService;
 import com.zjxu.educationapp.modules.vo.StudentSimpleVO;
 import com.zjxu.educationapp.modules.vo.SubjectsVO;
 import com.zjxu.educationapp.modules.vo.TeacherClassVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class TeacherServiceImpl implements TeacherService {
 
     @Autowired
@@ -117,8 +120,10 @@ public class TeacherServiceImpl implements TeacherService {
      */
     @Override
     public Result<IPage<StudentSimpleVO>> stuList(Long classId, int page, int size) {
-        Page<StudentClass> studentClassPage = studentClassMapper.selectPage(new Page<>(page, size),
-                new LambdaQueryWrapper<StudentClass>().eq(StudentClass::getClassId, classId));
+        Page<StudentClassEntity> studentClassPage = studentClassMapper.selectPage(new Page<>(page, size),
+                new LambdaQueryWrapper<StudentClassEntity>()
+                        .eq(StudentClassEntity::getClassId, classId)
+                        .eq(StudentClassEntity::getStatus, 1));
         IPage<StudentSimpleVO> studentSimpleVOIPage = studentClassPage.convert(studentClass -> {
             StudentSimpleVO studentSimpleVO = new StudentSimpleVO();
             //根据学生Id找学生信息
@@ -126,6 +131,7 @@ public class TeacherServiceImpl implements TeacherService {
                     .eq(UserEntity::getId, studentClass.getStudentId()));
             studentSimpleVO.setUserName(student.getUserName());
             studentSimpleVO.setUserId(student.getId());
+            studentSimpleVO.setAvatarUrl(student.getAvatarUrl());
             return studentSimpleVO;
         });
         return Result.ok(studentSimpleVOIPage);
@@ -135,12 +141,43 @@ public class TeacherServiceImpl implements TeacherService {
      * 删除学生
      *
      * @param stuIds
-     * @param classId
      * @return
      */
     @Override
-    public Result<?> deleteStus(List<Long> stuIds, Long classId) {
-        //TODO 删除学生
-        return null;
+    public Result<?> deleteStus(List<Long> stuIds) {
+        if (stuIds==null||stuIds.size()==0){
+            log.info("未选择要删除的学生");
+            return Result.error(ErrorCode.UNSELECTED_FOR_DELETION);
+        }
+        for (Long stuId : stuIds) {
+            StudentClassEntity studentClass = studentClassMapper.selectOne(new LambdaQueryWrapper<StudentClassEntity>()
+                    .eq(StudentClassEntity::getStudentId, stuId)
+                    .eq(StudentClassEntity::getStatus, 1));
+            log.info("删除学生信息：{}",studentClass);
+            if (studentClass==null){
+                log.info("未找到要删除的学生");
+                return Result.error(ErrorCode.STU_NOT_FOUND);
+            }
+            studentClass.setStatus(0);
+            studentClassMapper.update(studentClass,new LambdaQueryWrapper<StudentClassEntity>()
+                    .eq(StudentClassEntity::getStudentId, studentClass.getStudentId()));
+        }
+        return Result.ok();
     }
+
+    /**
+     * 添加学生
+     **/
+    @Override
+    public Result<?> addStus(List<Long> stuIds, Long classId) {
+        for (Long stuId : stuIds) {
+            StudentClassEntity studentClass = new StudentClassEntity();
+            studentClass.setStudentId(stuId);
+            studentClass.setClassId(classId);
+            studentClassMapper.insert(studentClass);
+        }
+        return Result.ok();
+    }
+
+
 }

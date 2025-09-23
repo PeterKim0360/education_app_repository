@@ -8,5 +8,6 @@ import java.util.List;
 public class StuHWSubmitDTO {
     private Long homeworkId;
     private Integer subjectId;
+    private Long studentId;
     private List<String> studentContent;
 }

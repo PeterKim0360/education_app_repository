@@ -9,7 +9,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.LoginDTO;
 import com.zjxu.educationapp.modules.dto.UserProfileDTO;
 import com.zjxu.educationapp.modules.entity.ClassEntity;
-import com.zjxu.educationapp.modules.entity.StudentClass;
+import com.zjxu.educationapp.modules.entity.StudentClassEntity;
 import com.zjxu.educationapp.modules.entity.UserEntity;
 import com.zjxu.educationapp.modules.mapper.ClassMapper;
 import com.zjxu.educationapp.modules.mapper.StudentClassMapper;
@@ -17,7 +17,6 @@ import com.zjxu.educationapp.modules.service.UserService;
 import com.zjxu.educationapp.modules.mapper.UserMapper;
 import com.zjxu.educationapp.modules.vo.UserInfoVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -95,8 +94,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         BeanUtil.copyProperties(user, userInfoVO);
         if(user.getIdentity() == 0){
             //学生独有信息
-            StudentClass studentClass = studentClassMapper.selectOne(new LambdaQueryWrapper<StudentClass>().eq(StudentClass::getStudentId, userId));
-            ClassEntity classEntity = classMapper.selectOne(new LambdaQueryWrapper<ClassEntity>().eq(ClassEntity::getClassId, studentClass.getClassId()));
+            StudentClassEntity studentClassEntity = studentClassMapper.selectOne(new LambdaQueryWrapper<StudentClassEntity>().eq(StudentClassEntity::getStudentId, userId));
+            ClassEntity classEntity = classMapper.selectOne(new LambdaQueryWrapper<ClassEntity>().eq(ClassEntity::getClassId, studentClassEntity.getClassId()));
             userInfoVO.setClassName(classEntity.getClassName());
         }
         return Result.ok(userInfoVO);
@@ -116,10 +115,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         classMapper.insert(classEntity);
 
         Long classId = classEntity.getClassId();
-        StudentClass studentClass = new StudentClass();
-        studentClass.setStudentId(userId);
-        studentClass.setClassId(classId);
-        studentClassMapper.insert(studentClass);
+        StudentClassEntity studentClassEntity = new StudentClassEntity();
+        studentClassEntity.setStudentId(userId);
+        studentClassEntity.setClassId(classId);
+        studentClassMapper.insert(studentClassEntity);
         return Result.ok("注册成功");
     }
 }

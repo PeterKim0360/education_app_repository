@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,6 +47,7 @@ public class TeacherController {
      */
     @Operation(summary = "创建班级",description = "传参：className,subjectId")
     @PostMapping("/create/class")
+    @Transactional
     public Result<?> createClass(@RequestParam("className") String className,@RequestParam("subjectId") Integer subjectId) {
         log.info("创建班级:{},对应学科:{}",className,subjectId);
         return teacherService.createClass(className,subjectId);
@@ -67,12 +69,23 @@ public class TeacherController {
     /**
      * 删除学生
      */
-    @Operation(summary = "删除学生",description = "传参：")
+    @Operation(summary = "删除学生",description = "传参：stuIds")
     @DeleteMapping("/delete/stus")
-    public Result<?> deleteStus(@RequestParam("stuIds") List<Long> stuIds,
-                                @RequestParam("classId") Long classId) {
+    @Transactional
+    public Result<?> deleteStus(@RequestParam("stuIds") List<Long> stuIds) {
         log.info("删除学生:{}",stuIds);
-        return teacherService.deleteStus(stuIds,classId);
+        return teacherService.deleteStus(stuIds);
     }
 
+    /**
+     * 添加学生
+     */
+    @Operation(summary = "添加学生",description = "传参：stuIds")
+    @PostMapping("/add/stus")
+    @Transactional
+    public Result<?> addStus(@RequestParam("stuIds") List<Long> stuIds,
+                             @RequestParam("classId") Long classId) {
+        log.info("添加学生:{}",stuIds);
+        return teacherService.addStus(stuIds,classId);
+    }
 }

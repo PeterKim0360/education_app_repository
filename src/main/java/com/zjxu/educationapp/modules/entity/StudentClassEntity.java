@@ -12,7 +12,7 @@ import lombok.Data;
  */
 @TableName(value ="student_class")
 @Data
-public class StudentClass {
+public class StudentClassEntity {
     /**
      * 
      */
@@ -30,7 +30,10 @@ public class StudentClass {
     private Long classId;
 
     /**
-     * 逻辑删除：1为启用，0为删除
+     * 状态：1，启用；0，删除
      */
     private Integer status;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }

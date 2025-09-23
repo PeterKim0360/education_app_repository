@@ -63,7 +63,8 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
         //查询条件为userId和未完成
         QueryWrapper<StuHomework> queryWrapper = new QueryWrapper<StuHomework>()
                 .eq("user_id", userId)
-                .eq("complete_and_correct", 1);
+                .eq("complete_and_correct", 1)
+                .eq("logical_deletion",1);
         //判断subjectId是否为null
         if (subjectId!=null){
             //加条件,查该科的未完成
@@ -152,6 +153,7 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
                         .eq("user_id",userId)
                         .eq("subject_id",subjectId)
                         .eq("complete_and_correct",2)
+                        .eq("logical_deletion",1)
                         .orderByDesc("submit_time"));
         IPage<StuHomeWorkSubVO> stuHomeWorkVOIPage = stuHomeworkPage.convert(stuHomework -> {
             StuHomeWorkSubVO stuHomeWorkSubVO = new StuHomeWorkSubVO();
@@ -188,6 +190,7 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
                         .eq("user_id",userId)
                         .eq("subject_id",subjectId)
                         .eq("complete_and_correct",3)
+                        .eq("logical_deletion",1)
                         .orderByDesc("correct_time"));
         IPage<StuHomeWorkCorVO> stuHomeWorkCorVOIPage = stuHomeworkPage.convert(stuHomework -> {
             StuHomeWorkCorVO stuHomeWorkCorVO = new StuHomeWorkCorVO();
@@ -250,10 +253,18 @@ public class StuHomeworkServiceImpl extends ServiceImpl<StuHomeworkMapper, StuHo
         //获取当前学生的作业信息
         StuHomework stuHomework = stuHomeworkMapper.selectOne(new LambdaQueryWrapper<StuHomework>()
                 .eq(StuHomework::getHomeworkId, homeworkId)
-                .eq(StuHomework::getUserId, StpUtil.getLoginIdAsLong()));
+                .eq(StuHomework::getUserId, StpUtil.getLoginIdAsLong())
+                .eq(StuHomework::getLogicalDeletion, 1));
+        if (stuHomework==null){
+            return Result.error(ErrorCode.THE_JOB_DOES_NOT_EXIST);
+        }
         //获取老师发布的作业信息
         TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
-                .eq(TeachHomework::getHomeworkId, homeworkId));
+                .eq(TeachHomework::getHomeworkId, homeworkId)
+                .eq(TeachHomework::getLogicalDeletion, 1));
+        if (teachHomework==null){
+            return Result.error(ErrorCode.THE_JOB_DOES_NOT_EXIST);
+        }
         //获取对应科目名
         Subjects subjects = subjectsMapper.selectById(teachHomework.getSubjectId());
         String subjectName = subjects != null ? subjects.getSubjectName() : "未知学科";

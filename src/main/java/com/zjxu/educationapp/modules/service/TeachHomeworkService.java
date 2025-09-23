@@ -2,13 +2,12 @@ package com.zjxu.educationapp.modules.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.HomeworkSubmissionDTO;
+import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.dto.TeachCreateHomeworkDTO;
 import com.zjxu.educationapp.modules.entity.TeachHomework;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zjxu.educationapp.modules.vo.TeachCreateHWDetailVO;
-import com.zjxu.educationapp.modules.vo.TeachCreateHWSimpleVO;
-import com.zjxu.educationapp.modules.vo.TeachSendHWDetailVO;
-import com.zjxu.educationapp.modules.vo.TeachSendHWSimpleVO;
+import com.zjxu.educationapp.modules.vo.*;
 
 import java.util.List;
 
@@ -78,4 +77,46 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
      * @return
      */
     Result<TeachSendHWDetailVO> findSendHW(Long homeworkId);
+
+    /**
+     * 查看待批改作业详情
+     *
+     * @return
+     */
+    Result<List<HomeworkSubmissionVO>> queryUnCorDetailList(Integer subjectId, Long homeworkId);
+
+    /**
+     * 查看待批改作业
+     *
+     * @return
+     */
+    Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList(int page, int  size);
+
+    /**
+     * 批改作业
+     *
+     * @return
+     */
+    Result<?> correctHW(HomeworkSubmissionDTO homeworkSubmissionDTO);
+
+    /**
+     * 查看已批改作业
+     *
+     * @return
+     */
+    Result<List<CorrectVO>> queryCorrectList(Integer subjectId, Long homeworkId);
+
+    /**
+     * AI 创建作业
+     *
+     * @return
+     */
+    Result<?> createHWByAI(String msg);
+
+    /**
+     * AI 批改作业
+     *
+     * @return
+     */
+    Result<?> correctHWByAI(StuHWSubmitDTO stuHWSubmitDTO);
 }

@@ -7,11 +7,9 @@ import com.zjxu.educationapp.common.constant.QuestionShowType;
 import com.zjxu.educationapp.common.utils.AiQuestionParser;
 import com.zjxu.educationapp.common.utils.PageInfo;
 import com.zjxu.educationapp.common.utils.Result;
-import com.zjxu.educationapp.modules.controller.QuestionController;
 import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.vo.QuestionResult;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -232,11 +230,13 @@ public class QuestionService {
     }
 
     /**
-     * AI 错误题分析
-     * @param subjectId 科目ID
+     * AI 错误题分析（根据指定题目ID列表进行分析）
+     *
+     * @param subjectId   科目ID
+     * @param questionIds 题目ID列表
      * @return 分析结果
      */
-    public Result<QuestionResultSummary> summary(int subjectId) {
+    public Result<QuestionResultSummary> summary(int subjectId, List<Integer> questionIds) {
         // 1. 验证科目合法性
         Subjects subject = subjectsMapper.selectById(subjectId);
         if (subject == null) {
@@ -247,19 +247,20 @@ public class QuestionService {
         long userId = StpUtil.getLoginIdAsLong();
         log.info("用户ID:{}请求生成{}科目错题分析", userId, subjectName);
 
-        // 2. 查询用户该科目的所有错题记录
+        // 2. 查询用户该科目的指定错题记录
         List<ErrorQuestions> errorQuestionList = errorQuestionsMapper.selectList(
                 new LambdaQueryWrapper<ErrorQuestions>()
                         .eq(ErrorQuestions::getUserId, userId)
                         .eq(ErrorQuestions::getSubjectId, subjectId)
+                        .in(ErrorQuestions::getQuestionId, questionIds) // 根据指定题目ID列表查询
         );
 
         // 3. 处理无错题场景
         if (errorQuestionList.isEmpty()) {
-            log.info("用户ID:{}在{}科目暂无错题", userId, subjectName);
+            log.info("用户ID:{}在{}科目暂无指定错题", userId, subjectName);
             return Result.ok(new QuestionResultSummary(
                     subjectName,
-                    "当前科目暂无错题，建议保持学习节奏，定期巩固知识点",
+                    "当前科目暂无指定错题，建议保持学习节奏，定期巩固知识点",
                     0,
                     Collections.emptyList()
             ));
@@ -350,22 +351,21 @@ public class QuestionService {
                     suggestions
             );
 
-
             return Result.ok(resultSummary);
         } catch (Exception e) {
             log.error("调用AI生成错题分析失败，科目：{}", subjectName, e);
             return Result.error("AI分析服务异常，请稍后重试");
         }
-
     }
+
     /**
-     * 从AI生成的文本中提取“学习建议”部分
-     * 支持多种格式：以“学习建议：”、“建议：”、“建议如下：”开头
+     * 从AI生成的文本中提取"学习建议"部分
+     * 支持多种格式：以"学习建议："、"建议："、"建议如下："开头
      */
     private List<String> extractSuggestions(String aiResponse) {
         List<String> suggestions = new ArrayList<>();
 
-        // 匹配“学习建议”或“建议”开头的段落
+        // 匹配"学习建议"或"建议"开头的段落
         String[] lines = aiResponse.split("\\n");
         boolean inSuggestionSection = false;
         StringBuilder currentSuggestion = new StringBuilder();
@@ -374,7 +374,7 @@ public class QuestionService {
             line = line.trim();
 
             // 检查是否进入建议区域
-            if (line.contains("学习建议") || line.contains("建议：") || line.contains("建议如下")) {
+            if (line.contains("学习建议") || line.contains("建议：") || line.contains("建议如下：")) {
                 inSuggestionSection = true;
                 continue;
             }
@@ -408,6 +408,7 @@ public class QuestionService {
 
         return suggestions;
     }
+
 
 
 

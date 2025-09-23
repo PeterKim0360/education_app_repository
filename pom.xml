@@ -128,6 +128,8 @@
 <!--            <artifactId>spring-ai-alibaba-starter</artifactId>-->
 <!--            <version>${spring-aliyun-ai.version}</version>-->
 <!--        </dependency>-->
+        <!-- 使用通义千问的starter -->
+
     </dependencies>
 
     <build>
@@ -162,7 +164,9 @@
             </plugin>
         </plugins>
     </build>
-<!--    <repositories>-->
+
+
+    <!--    <repositories>-->
 <!--        <repository>-->
 <!--            <id>spring-milestones</id>-->
 <!--            <name>Spring Milestones</name>-->
