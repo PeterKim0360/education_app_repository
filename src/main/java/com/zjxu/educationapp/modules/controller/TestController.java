@@ -2,6 +2,7 @@ package com.zjxu.educationapp.modules.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.zjxu.educationapp.common.utils.Result;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import org.springframework.stereotype.Controller;
@@ -15,8 +16,8 @@ import java.util.Date;
 /**
  * 测试
  */
-@Tag(name = "测试（忽略）")
 @RestController
+@Hidden
 public class TestController {
     @GetMapping("/test/{id}")
     public Result Test(@PathVariable Integer id){

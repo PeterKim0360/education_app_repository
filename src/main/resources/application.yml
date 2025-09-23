@@ -63,7 +63,7 @@ sa-token:
   # 仅启用请求头读取token
   is-read-header: true
   is-read-body: false
-  is-read-cookie: false
+  is-read-cookie: true
 dashscope:
   api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
 # springdoc-openapi项目配置

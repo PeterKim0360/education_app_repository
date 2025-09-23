@@ -6,6 +6,8 @@ import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.constant.SecurityConstant;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.service.UserService;
+import com.zjxu.educationapp.modules.service.UserChatService;
+import com.zjxu.educationapp.modules.vo.SendMessageRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ public class SingleChatEndpoint {
      */
     //TODO 修改Service
     private static UserService userService;
+    private static UserChatService userChatService;
 
     //通过发送人->收件人组合id 映射到对应会话
     private static ConcurrentHashMap<String, Session> onlineUserSession = new ConcurrentHashMap<>();
@@ -38,23 +41,28 @@ public class SingleChatEndpoint {
     //TODO 关于多用户的会话，单例问题
     private String sessionKey;
     private String reverseSessionKey;
+    
     //另一种可用注入方式
     @Autowired
     public void setUserService(UserService userService) {
         SingleChatEndpoint.userService = userService;
     }
 
+    @Autowired
+    public void setUserChatService(UserChatService userChatService) {
+        SingleChatEndpoint.userChatService = userChatService;
+    }
+
     //NOTE 区别于springMvc，websocket协议需要使用@PathParm("参数名")来获取路径参数
     @OnOpen
     public void onOpen(@PathParam("toUserId") Long toUserId, Session session) {
-        log.info("");
+        log.info("WebSocket连接建立，toUserId: {}", toUserId);
         /*
         建立连接时就确定接收消息人，在线or不在线：在线通过websocket发消息，不在线调用service持久化历史消息；
         一开始进入对话页面需要将历史消息展示出来，能够像微信一样确定是谁发的历史消息
         1.进入对话框发送两个请求：websocket请求和获取历史消息http请求
         2.websocket采用双向连接，toId->fromId 表示接收人对发送人建立会话连接，反之同理
          */
-        //TODO 未做历史消息持久化模块
         Object authError = session.getUserProperties().get(SecurityConstant.AUTH_ERROR);
         if (authError != null) {
             //token认证失败
@@ -67,17 +75,27 @@ public class SingleChatEndpoint {
         this.reverseSessionKey = toUserId + ":" + fromUserId;
 
         onlineUserSession.put(sessionKey, session);
+        log.info("WebSocket连接成功，sessionKey: {}", sessionKey);
     }
 
     //NOTE 此注解规范了参数有String:message和Session:session，因此如果需要传入自定义JSON对象时，只能手动解析message
     @OnMessage
-    public void onMessage(@PathParam("toUserId") Long toUserId,String message, Session session) {
-        System.out.println("接收到消息：" + message);
+    public void onMessage(@PathParam("toUserId") Long toUserId, String message, Session session) {
+        log.info("接收到消息：{}, toUserId: {}", message, toUserId);
 
         try {
+            // 获取发送者ID
+            long fromUserId = Long.parseLong(session.getUserProperties().get(SecurityConstant.USER_ID).toString());
+            
+            // 保存消息到数据库
+            saveMessageToDatabase(fromUserId, toUserId, message);
+            
+            // 实时发送消息
             sendRealTimeMessage(message, session);
         } catch (IOException e) {
-            log.info("发送消息失败，onMessage()");
+            log.error("发送消息失败，onMessage()", e);
+        } catch (Exception e) {
+            log.error("处理消息失败", e);
         }
     }
 
@@ -85,6 +103,7 @@ public class SingleChatEndpoint {
     public void onClose(@PathParam("toUserId") Long toUserId) {
         //此时自动关闭连接
         onlineUserSession.remove(sessionKey);
+        log.info("WebSocket连接关闭，sessionKey: {}", sessionKey);
     }
 
     @OnError
@@ -114,12 +133,37 @@ public class SingleChatEndpoint {
     private void sendRealTimeMessage(String message, Session session) throws IOException {
         if(onlineUserSession.containsKey(reverseSessionKey)){
             //在线，实时发送消息
-            log.info("在线");
+            log.info("对方在线，实时发送消息");
             Session reverseSession = onlineUserSession.get(reverseSessionKey);
             reverseSession.getBasicRemote().sendText(message);
         }else{
-            log.info("不在线");
-            //不在线，将历史消息持久化
+            log.info("对方不在线，消息已保存到数据库");
+            // 消息已经在 onMessage 方法中保存到数据库了
+        }
+    }
+
+    /**
+     * 保存消息到数据库
+     * @param fromUserId 发送者ID
+     * @param toUserId 接收者ID
+     * @param content 消息内容
+     */
+    private void saveMessageToDatabase(Long fromUserId, Long toUserId, String content) {
+        try {
+            if (userChatService != null) {
+                SendMessageRequest request = new SendMessageRequest();
+                request.setToUserId(toUserId);
+                request.setContent(content);
+                request.setMessageType(1); // 默认文字消息
+                
+                // 使用重载方法直接传递发送者ID
+                Long messageId = userChatService.saveMessage(fromUserId, request);
+                log.info("消息保存成功，messageId: {}", messageId);
+            } else {
+                log.warn("UserChatService未注入，无法保存消息");
+            }
+        } catch (Exception e) {
+            log.error("保存消息到数据库失败", e);
         }
     }
 

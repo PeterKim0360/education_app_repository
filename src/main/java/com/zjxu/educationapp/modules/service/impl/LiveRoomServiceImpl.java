@@ -7,21 +7,28 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zjxu.educationapp.common.constant.RedisConstant;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.LiveRoomDTO;
 import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.LiveRoomService;
+import com.zjxu.educationapp.modules.vo.LiveRoomDetailVO;
 import com.zjxu.educationapp.modules.vo.StudentLiveRoomVO;
+import com.zjxu.educationapp.modules.vo.TeacherLiveRoomVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author Kim-Peter
@@ -44,6 +51,14 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
     private UserMapper userMapper;
     @Autowired
     private SubjectsMapper subjectsMapper;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+    private static final String prefixUrl = "rtmp://121.41.176.238:1935/live/";
+//    private static final String prefixUrl = "rtmp://192.168.88.130:1935/live/";
+
+    //    // 线程池管理器，可以开启异步线程执行任务
+//    @Autowired
+//    private ThreadPoolTaskExecutor asyncExecutor;
     @Override
     public Result<?> createLiveRoom(LiveRoomDTO liveRoomDTO) {
         LiveRoomEntity liveRoomEntity = new LiveRoomEntity();
@@ -85,6 +100,7 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
         lambdaUpdateWrapper.eq(LiveRoomEntity::getLiveId, liveId);
         //推流码此处存入数据库不包括查询参数，等同于流名
         lambdaUpdateWrapper.set(LiveRoomEntity::getStreamKey, uuid);
+        lambdaUpdateWrapper.set(LiveRoomEntity::getRtmpUrl, prefixUrl + streamKey);
         liveRoomMapper.update(null, lambdaUpdateWrapper);
         return streamKey;
     }
@@ -96,17 +112,124 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
                 .eq(LiveRoomEntity::getLiveId, liveId)
                 .eq(LiveRoomEntity::getUserId, userId)
                 .eq(LiveRoomEntity::getStreamKey, name));
-        if (count == 0) {
-            //流名不正确
-            log.info("推流码不正确");
-            return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body("推流码不正确");
-        }
+//        if (count == 0) {
+//            //流名不正确
+//            log.info("推流码不正确");
+//            return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body("推流码不正确");
+//        }
         LambdaUpdateWrapper<LiveRoomEntity> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
         lambdaUpdateWrapper.eq(LiveRoomEntity::getLiveId, liveId);
         lambdaUpdateWrapper.set(LiveRoomEntity::getStartTime, new Date()).set(LiveRoomEntity::getStatus, 1);
         this.update(null, lambdaUpdateWrapper);
         log.info("推流成功");
         return ResponseEntity.status(HttpServletResponse.SC_OK).body("推流成功");
+    }
+
+    @Override
+    public Result<List<TeacherLiveRoomVO>> getTeacherLiveRooms() {
+        // 获取当前登录老师的ID
+        long teacherId = StpUtil.getLoginIdAsLong();
+
+        // 查询该老师创建的所有直播间
+        List<LiveRoomEntity> liveRoomEntities = this.list(new LambdaQueryWrapper<LiveRoomEntity>()
+                .eq(LiveRoomEntity::getUserId, teacherId)
+                .orderByDesc(LiveRoomEntity::getCreateTime));
+
+        // 转换为VO对象
+        List<TeacherLiveRoomVO> teacherLiveRoomVOS = new ArrayList<>();
+        for (LiveRoomEntity liveRoomEntity : liveRoomEntities) {
+            TeacherLiveRoomVO vo = new TeacherLiveRoomVO();
+            vo.setLiveId(liveRoomEntity.getLiveId());
+            vo.setStatus(liveRoomEntity.getStatus());
+            vo.setRoomName(liveRoomEntity.getRoomName());
+            vo.setDescription(liveRoomEntity.getDescription());
+            vo.setStartTime(liveRoomEntity.getStartTime());
+
+            // 获取学科名称
+            Subjects subject = subjectsMapper.selectById(liveRoomEntity.getSubjectId());
+            if (subject != null) {
+                vo.setSubjectName(subject.getSubjectName());
+            }
+
+            // 获取关联的班级名称集合
+            List<LiveRoomClassEntity> liveRoomClassEntities = liveRoomClassMapper.selectList(
+                    new LambdaQueryWrapper<LiveRoomClassEntity>()
+                            .eq(LiveRoomClassEntity::getLiveRoomId, liveRoomEntity.getLiveId())
+            );
+
+            List<Long> classIds = liveRoomClassEntities.stream()
+                    .map(LiveRoomClassEntity::getClassId)
+                    .collect(Collectors.toList());
+
+            List<String> classNames = new ArrayList<>();
+            if (!classIds.isEmpty()) {
+                List<ClassEntity> classEntities = classMapper.selectBatchIds(classIds);
+                classNames = classEntities.stream()
+                        .map(ClassEntity::getClassName)
+                        .collect(Collectors.toList());
+            }
+            vo.setClassNames(classNames);
+
+            teacherLiveRoomVOS.add(vo);
+        }
+
+        return Result.ok(teacherLiveRoomVOS);
+    }
+
+    @Override
+    public Result<LiveRoomDetailVO> getLiveRoomDetail(Integer liveRoomId) {
+        // 查询直播间信息
+        LiveRoomEntity liveRoomEntity = this.getById(liveRoomId);
+        if (liveRoomEntity == null) {
+            return Result.error("直播间不存在");
+        }
+
+        // 构造返回VO
+        LiveRoomDetailVO liveRoomDetailVO = new LiveRoomDetailVO();
+        liveRoomDetailVO.setLiveId(liveRoomEntity.getLiveId());
+        liveRoomDetailVO.setUserId(liveRoomEntity.getUserId());
+        liveRoomDetailVO.setSubjectId(liveRoomEntity.getSubjectId());
+        liveRoomDetailVO.setStatus(liveRoomEntity.getStatus());
+        liveRoomDetailVO.setRoomName(liveRoomEntity.getRoomName());
+        liveRoomDetailVO.setDescription(liveRoomEntity.getDescription());
+        liveRoomDetailVO.setRtmpUrl(liveRoomEntity.getRtmpUrl());
+        liveRoomDetailVO.setStartTime(liveRoomEntity.getStartTime());
+
+        // 获取老师姓名
+        UserEntity userEntity = userMapper.selectById(liveRoomEntity.getUserId());
+        if (userEntity != null) {
+            liveRoomDetailVO.setTeacherName(userEntity.getUserName());
+        }
+
+        // 获取学科名称
+        Subjects subject = subjectsMapper.selectById(liveRoomEntity.getSubjectId());
+        if (subject != null) {
+            liveRoomDetailVO.setSubjectName(subject.getSubjectName());
+        }
+
+        // 获取直播间关联的班级信息
+        List<LiveRoomClassEntity> liveRoomClassEntities = liveRoomClassMapper.selectList(
+                new LambdaQueryWrapper<LiveRoomClassEntity>()
+                        .eq(LiveRoomClassEntity::getLiveRoomId, liveRoomId)
+        );
+
+        // 提取班级ID集合
+        List<Long> classIds = liveRoomClassEntities.stream()
+                .map(LiveRoomClassEntity::getClassId)
+                .collect(Collectors.toList());
+        liveRoomDetailVO.setClassIds(classIds);
+
+        // 获取班级名称集合
+        List<String> classNames = new ArrayList<>();
+        if (!classIds.isEmpty()) {
+            List<ClassEntity> classEntities = classMapper.selectBatchIds(classIds);
+            classNames = classEntities.stream()
+                    .map(ClassEntity::getClassName)
+                    .collect(Collectors.toList());
+        }
+        liveRoomDetailVO.setClassNames(classNames);
+
+        return Result.ok(liveRoomDetailVO);
     }
 
     /*
@@ -119,6 +242,8 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
         List<StudentLiveRoomVO> studentLiveRoomVOS = liveRoomMapper.getLiveRoomsByStudentId(userId);
         return Result.ok(studentLiveRoomVOS);
     }
+
+
 //    @Override
 //    public Result<List<StudentLiveRoomVO>> getLiveRoom() {
 //        long userId = StpUtil.getLoginIdAsLong();
@@ -147,6 +272,22 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
 //        }
 //        return Result.ok(studentLiveRoomVOS);
 //    }
+
+    @Override
+    public Result<String> studentExitLiveRoom(Integer liveRoomId) {
+        // 获取当前登录用户ID
+        long userId = StpUtil.getLoginIdAsLong();
+        // 检查直播间是否存在
+        LiveRoomEntity liveRoom = this.getById(liveRoomId);
+        if (liveRoom == null) {
+            return Result.error("直播间不存在");
+        }
+        // 构造Redis key
+        String onlineUsersKey = RedisConstant.LIVE_ROOM_ONLINE_USERS + liveRoomId;
+        // 从直播间在线用户集合中移除用户ID
+        stringRedisTemplate.opsForSet().remove(onlineUsersKey, String.valueOf(userId));
+        return Result.ok("退出直播间成功");
+    }
 }
 
 

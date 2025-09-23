@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.UserChatMessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.UserChatMessage">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="fromUserId" column="from_user_id" jdbcType="BIGINT"/>
+        <result property="toUserId" column="to_user_id" jdbcType="BIGINT"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="messageType" column="message_type" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="sendTime" column="send_time" jdbcType="TIMESTAMP"/>
+        <result property="conversationId" column="conversation_id" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, from_user_id, to_user_id, content, message_type, status, send_time, conversation_id
+    </sql>
+
+    <!-- 根据会话ID分页查询聊天记录 -->
+    <select id="selectByConversationIdWithPaging" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_chat_message
+        WHERE conversation_id = #{conversationId}
+        ORDER BY send_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计两用户间的消息总数 -->
+    <select id="countByConversationId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_chat_message
+        WHERE conversation_id = #{conversationId}
+    </select>
+
+    <!-- 标记消息为已读 -->
+    <update id="markMessagesAsRead">
+        UPDATE user_chat_message
+        SET status = 1
+        WHERE from_user_id = #{fromUserId}
+          AND to_user_id = #{toUserId}
+          AND status = 0
+    </update>
+
+</mapper> 

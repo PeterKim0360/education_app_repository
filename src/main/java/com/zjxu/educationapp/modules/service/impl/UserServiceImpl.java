@@ -9,7 +9,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.LoginDTO;
 import com.zjxu.educationapp.modules.dto.UserProfileDTO;
 import com.zjxu.educationapp.modules.entity.ClassEntity;
-import com.zjxu.educationapp.modules.entity.StudentClassEntity;
+import com.zjxu.educationapp.modules.entity.StudentClass;
 import com.zjxu.educationapp.modules.entity.UserEntity;
 import com.zjxu.educationapp.modules.mapper.ClassMapper;
 import com.zjxu.educationapp.modules.mapper.StudentClassMapper;
@@ -95,8 +95,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         BeanUtil.copyProperties(user, userInfoVO);
         if(user.getIdentity() == 0){
             //学生独有信息
-            StudentClassEntity studentClassEntity = studentClassMapper.selectOne(new LambdaQueryWrapper<StudentClassEntity>().eq(StudentClassEntity::getStudentId, userId));
-            ClassEntity classEntity = classMapper.selectOne(new LambdaQueryWrapper<ClassEntity>().eq(ClassEntity::getClassId, studentClassEntity.getClassId()));
+            StudentClass studentClass = studentClassMapper.selectOne(new LambdaQueryWrapper<StudentClass>().eq(StudentClass::getStudentId, userId));
+            ClassEntity classEntity = classMapper.selectOne(new LambdaQueryWrapper<ClassEntity>().eq(ClassEntity::getClassId, studentClass.getClassId()));
             userInfoVO.setClassName(classEntity.getClassName());
         }
         return Result.ok(userInfoVO);
@@ -116,10 +116,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity>
         classMapper.insert(classEntity);
 
         Long classId = classEntity.getClassId();
-        StudentClassEntity studentClassEntity = new StudentClassEntity();
-        studentClassEntity.setStudentId(userId);
-        studentClassEntity.setClassId(classId);
-        studentClassMapper.insert(studentClassEntity);
+        StudentClass studentClass = new StudentClass();
+        studentClass.setStudentId(userId);
+        studentClass.setClassId(classId);
+        studentClassMapper.insert(studentClass);
         return Result.ok("注册成功");
     }
 }
