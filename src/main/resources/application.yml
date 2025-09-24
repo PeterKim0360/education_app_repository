@@ -2,11 +2,11 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: dev
-
+    active: prod
   application:
     name: education-app
   jackson:
+    #规范请求日期参数的格式（针对Date对象）
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   #本地开发数据库改成自己的
@@ -32,6 +32,14 @@ spring:
     multipart:
       max-file-size: 100MB     # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
+  mybatis-plus:
+    #配置mapper.xml文件所在目录，只有多模块且mapper所在目录完全相同，才需要用到classpath*；不同模块的mapper必须避免名字重复
+    mapper-locations: classpath:com/zjxu/educationapp/modules/mapper/**/*.xml
+    #扫描entity包，并创建别名，xml中就可以直接写别名，而非全限定包名
+    typeAliases-package: com.zjxu.educationapp.modules.entity
+    configuration:
+      map-underscore-to-camel-case: true
+
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
@@ -61,7 +69,7 @@ sa-token:
   # 仅启用请求头读取token
   is-read-header: true
   is-read-body: false
-  is-read-cookie: false
+  is-read-cookie: true
 dashscope:
   api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
 # springdoc-openapi项目配置
@@ -89,4 +97,6 @@ education:
     access-key-id: ${OSS_ACCESS_KEY_ID:}
     access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
     bucket-name: classroom-interaction
-
+#测试用
+#server:
+#  port: 9000

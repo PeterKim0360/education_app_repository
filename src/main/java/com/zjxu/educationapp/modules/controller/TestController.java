@@ -1,16 +1,15 @@
 package com.zjxu.educationapp.modules.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zjxu.educationapp.common.utils.Result;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -27,6 +26,20 @@ public class TestController {
         //登录时传给前端token->请求时携带token->判断token是否有效->映射到对应用户id，并全局绑定
         StpUtil.checkLogin();
         return Result.ok(StpUtil.getTokenValue());
+    }
+    @Data
+    static class TestDateDTO{
+        //NOTE 针对LocalDateTime对象使用@JsonFormat，Date对象可以使用yml，也可以使用注解
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+        private LocalDateTime localDateTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+        private Date date;
+    }
+    @PostMapping("/test/date")
+    public Result testDate(@RequestBody TestDateDTO testDateDTO){
+        System.out.println(testDateDTO.getLocalDateTime());
+        System.out.println(testDateDTO.getDate());
+        return Result.ok();
     }
 
     /* NOTE 关于SpringMVC默认参数绑定

@@ -10,8 +10,6 @@ public class EducationAppApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(EducationAppApplication.class, args);
-        System.out.println("Hello World"); 
-        
     }
 
 }
