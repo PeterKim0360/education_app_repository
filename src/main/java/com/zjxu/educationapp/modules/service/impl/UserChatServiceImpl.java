@@ -12,8 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -33,31 +32,31 @@ public class UserChatServiceImpl implements UserChatService {
     public ChatHistoryResponseVO getChatHistory(ChatHistoryRequestVO request) {
         // 获取当前登录用户ID
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        
+
         // 生成会话ID
         String conversationId = generateConversationId(currentUserId, request.getOtherUserId());
-        
+
         // 计算分页参数
         Integer offset = (request.getPageNum() - 1) * request.getPageSize();
-        
+
         // 查询聊天记录
         List<UserChatMessage> messages = userChatMessageMapper.selectByConversationIdWithPaging(
                 conversationId, offset, request.getPageSize());
-        
+
         // 统计总数
         Long total = userChatMessageMapper.countByConversationId(conversationId);
-        
+
         // 获取对方用户信息
         UserEntity otherUser = userMapper.selectById(request.getOtherUserId());
         if (otherUser == null) {
             throw new RuntimeException("对方用户不存在");
         }
-        
+
         // 转换为VO
         List<UserChatMessageVO> messageVOs = messages.stream().map(message -> {
             UserEntity fromUser = userMapper.selectById(message.getFromUserId());
             UserEntity toUser = userMapper.selectById(message.getToUserId());
-            
+
             return UserChatMessageVO.builder()
                     .id(message.getId())
                     .fromUserId(message.getFromUserId())
@@ -73,11 +72,11 @@ public class UserChatServiceImpl implements UserChatService {
                     .isSentByCurrentUser(message.getFromUserId().equals(currentUserId))
                     .build();
         }).collect(Collectors.toList());
-        
+
         // 计算分页信息
         Integer totalPages = (int) Math.ceil((double) total / request.getPageSize());
         Boolean hasMore = request.getPageNum() < totalPages;
-        
+
         return ChatHistoryResponseVO.builder()
                 .messages(messageVOs)
                 .pageNum(request.getPageNum())
@@ -105,7 +104,7 @@ public class UserChatServiceImpl implements UserChatService {
     public Long saveMessage(Long fromUserId, SendMessageRequestVO request) {
         // 生成会话ID
         String conversationId = generateConversationId(fromUserId, request.getToUserId());
-        
+
         // 构建消息对象
         UserChatMessage message = UserChatMessage.builder()
                 .fromUserId(fromUserId)
@@ -116,10 +115,10 @@ public class UserChatServiceImpl implements UserChatService {
                 .sendTime(new Date())
                 .conversationId(conversationId)
                 .build();
-        
+
         // 保存到数据库
         userChatMessageMapper.insert(message);
-        
+
         return message.getId();
     }
 
@@ -136,5 +135,50 @@ public class UserChatServiceImpl implements UserChatService {
         } else {
             return userId2 + ":" + userId1;
         }
+    }
+
+    @Override
+    public List<Long> getChatFriendsId() {
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        List<UserChatMessage> asToList = userChatMessageMapper.selectChatFriendsIdAsTo(currentUserId);
+        List<UserChatMessage> asFromList = userChatMessageMapper.selectChatFriendsIdAsFrom(currentUserId);
+        //混起来之前有个问题，就是说不能确定当前要的是to还是from
+        asToList.sort((o1, o2) -> {
+            return (int) (o2.getSendTime().toInstant().getEpochSecond() - o1.getSendTime().toInstant().getEpochSecond());
+        });
+        //若o2>o1,那么o2在前，o1在后，降序排序
+        asFromList.sort((o1, o2) -> {
+            return (int) (o2.getSendTime().toInstant().getEpochSecond() - o1.getSendTime().toInstant().getEpochSecond());
+        });
+        List<Long> res = new ArrayList<>();
+        int i1 = 0, i2 = 0;
+        while (i1 < asToList.size() && i2 < asFromList.size()) {
+            long toInstant = asToList.get(i1).getSendTime().toInstant().getEpochSecond();
+            long fromInstant = asFromList.get(i2).getSendTime().toInstant().getEpochSecond();
+            if (toInstant > fromInstant) {
+                res.add(asToList.get(i1).getFromUserId());
+                i1++;
+            } else {
+                res.add(asFromList.get(i2).getToUserId());
+                i2++;
+            }
+        }
+        while (i1 < asToList.size()) {
+            res.add(asToList.get(i1).getFromUserId());
+            i1++;
+        }
+        while (i2 < asFromList.size()) {
+            res.add(asFromList.get(i2).getToUserId());
+            i2++;
+        }
+        HashSet<Long> distinctSet = new HashSet<>();
+        List<Long> res2 = new ArrayList<>();
+        for (Long item : res) {
+            if(!distinctSet.contains(item)){
+                res2.add(item);
+                distinctSet.add(item);
+            }
+        }
+        return res2;
     }
 } 

@@ -45,4 +45,11 @@
           AND status = 0
     </update>
 
+    <select id="selectChatFriendsIdAsTo" resultType="UserChatMessage">
+        SELECT <include refid="Base_Column_List"/> from user_chat_message where to_user_id = #{currentUserId}
+    </select>
+
+    <select id="selectChatFriendsIdAsFrom" resultType="UserChatMessage">
+        SELECT <include refid="Base_Column_List"/>  from user_chat_message where from_user_id = #{currentUserId}
+    </select>
 </mapper> 

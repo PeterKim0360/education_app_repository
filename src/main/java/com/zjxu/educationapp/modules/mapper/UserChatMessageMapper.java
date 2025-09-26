@@ -41,4 +41,9 @@ public interface UserChatMessageMapper extends BaseMapper<UserChatMessage> {
      */
     Integer markMessagesAsRead(@Param("fromUserId") Long fromUserId, 
                               @Param("toUserId") Long toUserId);
-} 
+
+    List<UserChatMessage> selectChatFriendsIdAsTo(@Param("currentUserId") Long currentUserId);
+
+    List<UserChatMessage> selectChatFriendsIdAsFrom(Long currentUserId);
+
+}

@@ -2,7 +2,7 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: prod
+    active: dev
   application:
     name: education-app
   jackson:
@@ -32,13 +32,15 @@ spring:
     multipart:
       max-file-size: 100MB     # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
-  mybatis-plus:
-    #配置mapper.xml文件所在目录，只有多模块且mapper所在目录完全相同，才需要用到classpath*；不同模块的mapper必须避免名字重复
-    mapper-locations: classpath:com/zjxu/educationapp/modules/mapper/**/*.xml
-    #扫描entity包，并创建别名，xml中就可以直接写别名，而非全限定包名
-    typeAliases-package: com.zjxu.educationapp.modules.entity
-    configuration:
-      map-underscore-to-camel-case: true
+
+#mybatis-plus不是spring的子级，而是配置文件的第一级
+mybatis-plus:
+  #配置mapper.xml文件所在目录，只有多模块且mapper所在目录完全相同，才需要用到classpath*；不同模块的mapper必须避免名字重复
+  mapper-locations: classpath:com/zjxu/educationapp/modules/mapper/**/*.xml
+  #扫描entity包，并创建别名，xml中就可以直接写别名，而非全限定包名
+  type-aliases-package: com.zjxu.educationapp.modules.entity
+  configuration:
+    map-underscore-to-camel-case: true
 
   ai:
     dashscope:
@@ -66,7 +68,7 @@ sa-token:
   is-log: false
   # 关闭控制台 Logo 打印
   is-print: false
-  # 仅启用请求头读取token
+  # 启用请求头读取token 和 Cookie保存会话id
   is-read-header: true
   is-read-body: false
   is-read-cookie: true

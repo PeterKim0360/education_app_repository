@@ -4,6 +4,9 @@ import com.zjxu.educationapp.modules.vo.ChatHistoryRequestVO;
 import com.zjxu.educationapp.modules.vo.ChatHistoryResponseVO;
 import com.zjxu.educationapp.modules.vo.SendMessageRequestVO;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 用户聊天服务接口
  */
@@ -46,4 +49,6 @@ public interface UserChatService {
      * @return 会话ID
      */
     String generateConversationId(Long userId1, Long userId2);
-} 
+
+    List<Long> getChatFriendsId();
+}
