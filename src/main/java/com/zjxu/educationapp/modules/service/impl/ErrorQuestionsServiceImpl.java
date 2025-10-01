@@ -2,10 +2,10 @@ package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.utils.MpListPageUtil;
 import com.zjxu.educationapp.common.utils.Result;
@@ -18,10 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
 * @author huawei
@@ -42,6 +41,8 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
     private TrueFalseMapper trueFalseMapper;
     @Autowired
     private FillInBlankMapper fillInBlankMapper;
+    @Autowired
+    private PracticeSessionMapper practiceSessionMapper;
     /**
      * 错题分页查询
      * @param subjectId
@@ -55,7 +56,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
         List<ErrorQuestions> errorQuestions = errorQuestionsMapper.
                 selectList(new QueryWrapper<ErrorQuestions>()
                         .eq("subject_id", subjectId)
-                        .eq("is_mastered",0)     //0为未掌握
+                        .eq("is_mastered",0)
                         .eq("user_id",userId)
                         .orderByDesc("created_time"));
         List<ErrorQuestionsVO> errorQuestionsVOS=new ArrayList<>();
@@ -346,6 +347,278 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
         fillInBlankVOList.sort((a, b) -> b.getCreatedTime().compareTo(a.getCreatedTime()));
         IPage<FillInBlankVO> fillInBlankVOIPage = MpListPageUtil.getPage(fillInBlankVOList, page, size);
         return Result.ok(fillInBlankVOIPage);
+    }
+
+    /**
+     * 开始对应学科错题循环练习
+     * @param studentId
+     * @param subjectId
+     * @param questionCount
+     * @return
+     */
+    @Override
+    public Result<List<ErrorQuestionsVO>> initPractice(Long studentId, Integer subjectId, int questionCount) {
+        try {
+            // 获取随机错题
+            List<Integer> questions = getRandomErrorQuestions(studentId, subjectId, questionCount);
+            if (questions.isEmpty()) {
+                return Result.error("该科目下没有错题");
+            }
+            // 创建练习会话
+            PracticeSession session = new PracticeSession();
+            session.setStudentId(studentId);
+            session.setSubjectId(subjectId);
+            session.setQuestionQueue(JSONUtil.toJsonStr(questions));
+            session.setWrongQuestions(JSONUtil.toJsonStr(new ArrayList<Integer>()));
+            session.setCurrentBatch(1);
+            session.setTotalBatches(0);
+            session.setCompleted(0);
+
+            practiceSessionMapper.insert(session);
+            //获取题目信息
+            List<ErrorQuestionsVO> questionsBatch = getQuestionsBatch(questions);
+            return Result.ok(questionsBatch);
+        } catch (Exception e) {
+            log.error("初始化练习会话失败", e);
+            return Result.error("初始化失败");
+        }
+    }
+
+    /**
+     * 提交答案
+     * @param sessionId
+     * @param questionId
+     * @param isCorrect
+     * @return
+     */
+    @Override
+    @Transactional
+    public Result<PracticeNextVO> submitAnswer(Long sessionId, Integer questionId, boolean isCorrect) {
+        try {
+            // 获取会话信息
+            PracticeSession session = practiceSessionMapper.selectById(sessionId);
+            if (session == null) {
+                return Result.error("练习会话不存在");
+            }
+
+            if (session.getCompleted() == 1) {
+                return Result.error("练习已完成");
+            }
+
+            List<Integer> questionQueue = JSONUtil.toList(session.getQuestionQueue(), Integer.class);
+            Set<Integer> wrongQuestions = new LinkedHashSet<>(JSONUtil.toList(session.getWrongQuestions(), Integer.class));
+            if (questionQueue.isEmpty()) {
+                return Result.error("没有待答题目");
+            }
+            // 处理答题结果
+            if (!isCorrect) {
+                wrongQuestions.add(questionId);
+            }
+            // 移除已答题目
+            questionQueue.remove(0);
+            PracticeNextVO result = new PracticeNextVO();
+            result.setRemainingCount(questionQueue.size());
+            if (questionQueue.isEmpty()) {
+                // 当前批次完成
+                if (wrongQuestions.isEmpty()) {
+                    // 全部答对
+                    session.setCompleted(1);
+                    session.setTotalBatches(session.getTotalBatches() + 1);
+                    result.setBatchCompleted(true);
+                    result.setAllCompleted(true);
+                    result.setNextQuestion(null);
+                } else {
+                    // 有错题，重新开始
+                    questionQueue = new ArrayList<>(wrongQuestions);
+                    wrongQuestions.clear();
+                    session.setCurrentBatch(session.getCurrentBatch() + 1);
+                    session.setTotalBatches(session.getTotalBatches() + 1);
+                    result.setBatchCompleted(true);
+                    result.setAllCompleted(false);
+                    result.setNextQuestion(questionQueue.isEmpty() ? null : questionQueue.get(0));
+                }
+            } else {
+                // 还有题目未答完
+                result.setBatchCompleted(false);
+                result.setAllCompleted(false);
+                result.setNextQuestion(questionQueue.get(0));
+            }
+            // 更新会话状态
+            session.setQuestionQueue(JSONUtil.toJsonStr(questionQueue));
+            session.setWrongQuestions(JSONUtil.toJsonStr(new ArrayList<>(wrongQuestions)));
+            practiceSessionMapper.updateById(session);
+            return Result.ok(result);
+        } catch (Exception e) {
+            log.error("提交答案失败", e);
+            return Result.error("提交失败");
+        }
+    }
+
+    /**
+     * 获取练习当前状态（用于恢复进度）
+     */
+    @Override
+    public Result<PracticeStateVO> getPracticeState(Long sessionId) {
+        try {
+            PracticeSession session = practiceSessionMapper.selectById(sessionId);
+            if (session == null) {
+                return Result.error("练习会话不存在");
+            }
+            List<Integer> questionQueue = JSONUtil.toList(session.getQuestionQueue(), Integer.class);
+            PracticeStateVO state = new PracticeStateVO();
+            state.setSessionId(session.getId());
+            state.setSubjectId(session.getSubjectId());
+            state.setCurrentBatch(session.getCurrentBatch());
+            state.setTotalBatches(session.getTotalBatches());
+            state.setCompleted(Objects.equals(session.getCompleted(), 1));
+            state.setRemainingCount(questionQueue.size());
+            state.setNextQuestion(questionQueue.isEmpty() ? null : questionQueue.get(0));
+            state.setPendingQueue(questionQueue);
+            return Result.ok(state);
+        } catch (Exception e) {
+            log.error("获取练习状态失败", e);
+            return Result.error("获取状态失败");
+        }
+    }
+
+    /**
+     * 查找该学生该学科未完成的会话（如有则返回状态，否则新建）
+     */
+    @Override
+    public Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount) {
+        try {
+            PracticeSession existing = practiceSessionMapper.selectOne(
+                    new QueryWrapper<PracticeSession>()
+                            .eq("student_id", studentId)
+                            .eq("subject_id", subjectId)
+                            .eq("completed", 0)
+                            .orderByDesc("update_time")
+                            .last("limit 1")
+            );
+            if (existing != null) {
+                return getPracticeState(existing.getId());
+            }
+            Result<List<ErrorQuestionsVO>> init = initPractice(studentId, subjectId, questionCount);
+            if (!init.getSuccess()) {
+                return Result.error(init.getMessage());
+            }
+            PracticeSession newest = practiceSessionMapper.selectOne(
+                    new QueryWrapper<PracticeSession>()
+                            .eq("student_id", studentId)
+                            .eq("subject_id", subjectId)
+                            .eq("completed", 0)
+                            .orderByDesc("id")
+                            .last("limit 1")
+            );
+            if (newest == null) {
+                return Result.error("初始化会话失败");
+            }
+            return getPracticeState(newest.getId());
+        } catch (Exception e) {
+            log.error("恢复或开始练习失败", e);
+            return Result.error("恢复或开始失败");
+        }
+    }
+
+    /**
+     * 批量获取题目详情
+     *
+     * @param questionIds
+     * @return
+     */
+    private List<ErrorQuestionsVO> getQuestionsBatch(List<Integer> questionIds) {
+        // 创建顺序映射
+        Map<Integer, Integer> orderMap = new HashMap<>();
+        for (int i = 0; i < questionIds.size(); i++) {
+            orderMap.put(questionIds.get(i), i);
+        }
+
+        List<ErrorQuestions> errorQuestions = errorQuestionsMapper.selectBatchIds(questionIds);
+
+        List<ErrorQuestionsVO> errorQuestionsVOS = new ArrayList<>();
+        for (ErrorQuestions errorQuestion : errorQuestions) {
+            ErrorQuestionsVO errorQuestionsVO = new ErrorQuestionsVO();
+            //将ErrorQuestions复制给ErrorQusVO
+            BeanUtils.copyProperties(errorQuestion,errorQuestionsVO);
+            // 初始化空字段为""
+            initEmptyFields(errorQuestionsVO);
+            //清理题干空格
+            errorQuestionsVO.setQuestionText(StrUtil.trim(errorQuestionsVO.getQuestionText()));
+            //查该学科的单选错题
+            SingleChoice singleChoice = singleChoiceMapper.selectOne(new QueryWrapper<SingleChoice>().eq("question_id", errorQuestion.getQuestionId()));
+            if (singleChoice!=null) {
+                //将SingleChoice复制给ErrorQusVO
+                errorQuestionsVO.setOptionA(StrUtil.trim(singleChoice.getOptionA()));
+                errorQuestionsVO.setOptionB(StrUtil.trim(singleChoice.getOptionB()));
+                errorQuestionsVO.setOptionC(StrUtil.trim(singleChoice.getOptionC()));
+                errorQuestionsVO.setOptionD(StrUtil.trim(singleChoice.getOptionD()));
+
+                errorQuestionsVO.setCorrectOption(StrUtil.trim(singleChoice.getCorrectOption()));
+                errorQuestionsVO.setUserAnswer(StrUtil.trim(singleChoice.getUserAnswer()));
+
+                errorQuestionsVOS.add(errorQuestionsVO);
+                continue;
+            }
+            //查该学科的多选错题
+            MultipleChoice multipleChoice = multipleChoiceMapper.selectOne(new QueryWrapper<MultipleChoice>().eq("question_id", errorQuestion.getQuestionId()));
+            if (multipleChoice!=null){
+                //将MultipleChoice复制给ErrorQusVO
+                String choices = StrUtil.trim(multipleChoice.getOptions());
+                List<String> optionList = parseOptions(choices);
+                errorQuestionsVO.setOptions(optionList);
+                errorQuestionsVO.setCorrectOption(StrUtil.trim(multipleChoice.getCorrectOptions()));
+                errorQuestionsVO.setUserAnswer(StrUtil.trim(multipleChoice.getUserAnswer()));
+
+                errorQuestionsVOS.add(errorQuestionsVO);
+                continue;
+            }
+            //查该学科的判断错题
+            TrueFalse trueFalse = trueFalseMapper.selectOne(new QueryWrapper<TrueFalse>().eq("question_id", errorQuestion.getQuestionId()));
+            if (trueFalse!=null){
+                //将TrueFalse复制给ErrorQusVO
+                String choices = StrUtil.trim(trueFalse.getOptions());
+                List<String> optionList = parseOptions(choices);
+                errorQuestionsVO.setOptions(optionList);
+                errorQuestionsVO.setCorrectOption(StrUtil.trim(trueFalse.getCorrectResult()));
+                errorQuestionsVO.setUserAnswer(StrUtil.trim(trueFalse.getUserAnswer()));
+                errorQuestionsVOS.add(errorQuestionsVO);
+                continue;
+            }
+            //查该学科的填空错题
+            FillInBlank fillInBlank = fillInBlankMapper.selectOne(new QueryWrapper<FillInBlank>().eq("question_id", errorQuestion.getQuestionId()));
+            if (fillInBlank!=null) {
+                //将FillInBlank复制给ErrorQusVO
+                errorQuestionsVO.setCorrectOption(StrUtil.trim(fillInBlank.getCorrectAnswers()));
+                errorQuestionsVO.setUserAnswer(StrUtil.trim(fillInBlank.getUserAnswers()));
+
+                errorQuestionsVOS.add(errorQuestionsVO);
+            }
+        }
+        // 按照请求顺序排序
+        errorQuestionsVOS.sort((a, b) -> {
+            Integer orderA = orderMap.get(a.getQuestionId());
+            Integer orderB = orderMap.get(b.getQuestionId());
+            return orderA.compareTo(orderB);
+        });
+
+        log.info("{}",errorQuestionsVOS);
+        return errorQuestionsVOS;
+    }
+
+    /**
+     * 获取指定数量的随机错题
+     * @param studentId
+     * @param subjectId
+     * @param questionCount
+     * @return
+     */
+    private List<Integer> getRandomErrorQuestions(Long studentId, Integer subjectId, int questionCount) {
+        List<ErrorQuestions> errorQuestions = errorQuestionsMapper.selectList(new LambdaQueryWrapper<ErrorQuestions>()
+                .eq(ErrorQuestions::getUserId, studentId)
+                .eq(ErrorQuestions::getSubjectId, subjectId)
+                .eq(ErrorQuestions::getIsMastered, false)
+                .last("ORDER BY RAND() LIMIT " + questionCount));
+        return errorQuestions.stream().map(ErrorQuestions::getQuestionId).toList();
     }
 
     /**

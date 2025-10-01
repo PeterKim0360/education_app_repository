@@ -12,13 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * AI作业批改器，兼容不同版本的DashScope SDK
@@ -71,6 +65,29 @@ public class AIHomeworkCorrector {
     }
 
     /**
+     * 核心批改方法（支持直接传递图片URL）
+     */
+    public CorrectionResult correctHomeworkWithImageUrls(
+            String systemPrompt,
+            String userPrompt,
+            List<String> imageUrls) throws Exception {
+
+        // 参数校验
+        if (!StringUtils.hasText(systemPrompt) || !StringUtils.hasText(userPrompt)) {
+            throw new InputRequiredException("系统提示和用户提示不能为空");
+        }
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            throw new InputRequiredException("图片URL列表不能为空");
+        }
+
+        // 调用API
+        String aiResponse = callOldVersionApiWithImageUrl(systemPrompt, userPrompt, imageUrls);
+
+        // 解析AI返回结果
+        return parseAIResponse(aiResponse);
+    }
+
+    /**
      * 校验输入参数
      */
     private void validateParameters(
@@ -90,20 +107,6 @@ public class AIHomeworkCorrector {
         }
     }
 
-    /**
-     * 判断是否为新版本SDK（2.23.0及以上）
-     */
-    private boolean isNewSdkVersion() {
-        try {
-            String[] versionParts = sdkVersion.split("\\.");
-            int major = Integer.parseInt(versionParts[0]);
-            int minor = Integer.parseInt(versionParts[1]);
-            return (major > 2) || (major == 2 && minor >= 23);
-        } catch (Exception e) {
-            log.warn("解析SDK版本失败，默认使用旧版本逻辑: {}", sdkVersion);
-            return false;
-        }
-    }
     /**
      * 调用旧版本SDK（使用JSON字符串）
      */
@@ -128,15 +131,18 @@ public class AIHomeworkCorrector {
         textContent.put("text", userPrompt);
         contentList.add(textContent);
 
-        // 添加图片内容（旧版本兼容格式）
+        // 添加图片内容（使用DashScope推荐的格式）
         for (int i = 0; i < imageDatas.size(); i++) {
-            String base64Image = Base64.getEncoder().encodeToString(imageDatas.get(i));
+            byte[] imageData = imageDatas.get(i);
             String format = normalizeImageFormat(imageFormats.get(i));
 
+            // 将图片转换为base64编码
+            String base64Image = Base64.getEncoder().encodeToString(imageData);
+
+            // 构建图片内容（使用DashScope官方推荐的格式）
             Map<String, Object> imageContent = new HashMap<>();
             imageContent.put("type", "image");
-            imageContent.put("data", base64Image);
-            imageContent.put("format", format);
+            imageContent.put("image", "data:image/" + format + ";base64," + base64Image);
             contentList.add(imageContent);
         }
 
@@ -158,6 +164,54 @@ public class AIHomeworkCorrector {
         return result.getOutput().getChoices().get(0).getMessage().getContent();
     }
 
+    /**
+     * 调用旧版本SDK（使用JSON字符串）- 直接传递图片URL版本
+     */
+    private String callOldVersionApiWithImageUrl(
+            String systemPrompt,
+            String userPrompt,
+            List<String> imageUrls) throws ApiException, NoApiKeyException, InputRequiredException {
+
+        // 构建系统消息
+        Message systemMessage = Message.builder()
+                .role(Role.SYSTEM.getValue())
+                .content(systemPrompt)
+                .build();
+
+        // 构建多模态内容
+        List<Map<String, Object>> contentList = new ArrayList<>();
+
+        // 添加文本内容
+        Map<String, Object> textContent = new HashMap<>();
+        textContent.put("type", "text");
+        textContent.put("text", userPrompt);
+        contentList.add(textContent);
+
+        // 添加图片内容（使用DashScope支持的直接URL格式：image_url）
+        for (String imageUrl : imageUrls) {
+            Map<String, Object> imageContent = new HashMap<>();
+            imageContent.put("type", "image");
+            imageContent.put("image_url", imageUrl);  // 直接传递图片URL
+            contentList.add(imageContent);
+        }
+
+        // 构建用户消息
+        Message userMessage = Message.builder()
+                .role(Role.USER.getValue())
+                .content(JSON.toJSONString(contentList))
+                .build();
+
+        // 调用API
+        GenerationParam param = GenerationParam.builder()
+                .apiKey(apiKey)
+                .model("qwen-vl-plus")
+                .messages(Arrays.asList(systemMessage, userMessage))
+                .resultFormat(GenerationParam.ResultFormat.MESSAGE)
+                .build();
+
+        GenerationResult result = generation.call(param);
+        return result.getOutput().getChoices().get(0).getMessage().getContent();
+    }
     /**
      * 创建dataUrl（用于新版本）
      */

@@ -1,8 +1,11 @@
 package com.zjxu.educationapp.modules.service;
 
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.HomeworkInClassDTO;
+import com.zjxu.educationapp.modules.dto.HomeworkInClassEditDTO;
+import com.zjxu.educationapp.modules.dto.HomeworkInClassSendDTO;
 import com.zjxu.educationapp.modules.dto.TeacherSendFileDTO;
-import com.zjxu.educationapp.modules.vo.TeacherClassVO;
+import com.zjxu.educationapp.modules.vo.HomeworkInClassVO;
 
 import java.util.List;
 
@@ -15,9 +18,46 @@ public interface TeacherCoursesService {
     Result<?> uploadFile(TeacherSendFileDTO teacherSendFileDTO);
 
     /**
-     * 获取课程对应的班级
+     * 开始上课
      * @param subjectId
      * @return
      */
-    Result<List<TeacherClassVO>> getClazz(Integer subjectId);
+    Result<?> startClass(Integer subjectId);
+
+    /**
+     * 结束上课
+     * @param subjectId
+     * @return
+     */
+    Result<?> endClass(Integer subjectId);
+
+    /**
+     * 发布作业
+     * @param homeworkInClassSendDTO
+     * @return
+     */
+    Result<?> sendWork(HomeworkInClassSendDTO homeworkInClassSendDTO);
+
+    /**
+     * 创建作业
+     * @param homeworkInClassDTO
+     * @return
+     */
+    Result<?> createWork(HomeworkInClassDTO homeworkInClassDTO);
+
+    /**
+     * 编辑作业
+     * @param homeworkInClassEditDTO
+     * @return
+     */
+    Result<?> editWork(HomeworkInClassEditDTO homeworkInClassEditDTO);
+
+    /**
+     * 作业列表
+     * @param subjectId
+     * @return
+     */
+    Result<List<HomeworkInClassVO>> work(Integer subjectId);
+
+
 }

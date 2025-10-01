@@ -11,9 +11,10 @@
             <result property="fileDescription" column="file_description" />
             <result property="teacherId" column="teacher_id" />
         <result property="uploadTime" column="upload_time" />
+        <result property="studentId" column="student_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,subject_id,file_url,file_description,teacher_id,upload_time
+        id,subject_id,file_url,file_description,teacher_id,upload_time,student_id
     </sql>
 </mapper>

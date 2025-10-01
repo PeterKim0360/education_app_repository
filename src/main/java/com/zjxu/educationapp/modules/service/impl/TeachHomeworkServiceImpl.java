@@ -5,10 +5,6 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.zjxu.educationapp.modules.controller.AIHomeworkCorrector;
 import org.apache.commons.io.IOUtils;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
-import com.aliyun.oss.model.OSSObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,10 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -529,9 +521,60 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 }
             }
 
-            // 校验图片数据
+            // 校验图片数据；若无可下载的图片，则尝试走图片URL直连批改作为降级方案
             if (imageDatas.isEmpty()) {
-                return Result.error("未找到有效的作业图片");
+                try {
+                    AIHomeworkCorrector corrector = new AIHomeworkCorrector(
+                            dashScopeApiKey, dashScopeSdkVersion
+                    );
+
+                    String systemPrompt = "你是专业教师，负责批改作业。请分析图片内容，返回：\n" +
+                            "1. 评分(score，0-100分)\n" +
+                            "2. 评语(comment，含优点、不足和建议)\n" +
+                            "严格按JSON格式输出，不包含其他内容：\n" +
+                            "{\"score\":90,\"comment\":\"评语内容\"}";
+
+                    StringBuilder userPrompt = new StringBuilder();
+                    userPrompt.append("作业要求：").append(
+                            Optional.ofNullable(teachHomework.getHomeworkContent()).orElse("无")
+                    ).append("\n请基于上述要求批改提交的作业图片。");
+
+                    // 若URL属于私有/限权资源，则为每个对象名生成带有效期的签名URL
+                    List<String> signedUrls = new ArrayList<>();
+                    if (studentImageUrls != null) {
+                        for (String imgUrl : studentImageUrls) {
+                            if (imgUrl != null && imgUrl.startsWith(ossPrefix)) {
+                                String objectName = imgUrl.substring(ossPrefix.length());
+                                signedUrls.add(generateSignedUrl(bucketName, endpoint, objectName, 600));
+                            } else {
+                                signedUrls.add(imgUrl);
+                            }
+                        }
+                    }
+
+                    AIHomeworkCorrector.CorrectionResult correctionResult = corrector.correctHomeworkWithImageUrls(
+                            systemPrompt, userPrompt.toString(), signedUrls
+                    );
+
+                    // 4. 更新作业状态与结果
+                    stuHomework.setCompleteAndCorrect(3);
+                    stuHomework.setScore(correctionResult.getScore());
+                    stuHomework.setTeacherComment(correctionResult.getComment());
+                    stuHomework.setCorrectTime(now);
+                    stuHomeworkMapper.updateById(stuHomework);
+
+                    // 5. 构建返回结果
+                    CorrectVO resultVO = new CorrectVO();
+                    resultVO.setHomeworkId(homeworkId);
+                    resultVO.setStudentId(studentId);
+                    resultVO.setScore(correctionResult.getScore());
+                    resultVO.setTeacherComment(correctionResult.getComment());
+
+                    return Result.ok(resultVO);
+                } catch (Exception degradeEx) {
+                    log.error("图片下载为空且URL批改降级失败 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, degradeEx);
+                    return Result.error("未找到有效的作业图片，且URL批改失败: " + degradeEx.getMessage());
+                }
             }
 
             // 3. 调用AI批改服务
@@ -551,9 +594,29 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
             AIHomeworkCorrector corrector = new AIHomeworkCorrector(
                     dashScopeApiKey, dashScopeSdkVersion
             );
-            AIHomeworkCorrector.CorrectionResult correctionResult = corrector.correctHomework(
-                    systemPrompt, userPrompt.toString(), imageDatas, imageFormats
-            );
+            AIHomeworkCorrector.CorrectionResult correctionResult;
+            try {
+                correctionResult = corrector.correctHomework(
+                        systemPrompt, userPrompt.toString(), imageDatas, imageFormats
+                );
+            } catch (Exception primaryEx) {
+                log.warn("字节流批改失败，尝试URL方式降级 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, primaryEx);
+                // URL方式降级：保障可访问性，优先使用签名URL
+                List<String> signedUrls = new ArrayList<>();
+                if (studentImageUrls != null) {
+                    for (String imgUrl : studentImageUrls) {
+                        if (imgUrl != null && imgUrl.startsWith(ossPrefix)) {
+                            String objectName = imgUrl.substring(ossPrefix.length());
+                            signedUrls.add(generateSignedUrl(bucketName, endpoint, objectName, 600));
+                        } else {
+                            signedUrls.add(imgUrl);
+                        }
+                    }
+                }
+                correctionResult = corrector.correctHomeworkWithImageUrls(
+                        systemPrompt, userPrompt.toString(), signedUrls
+                );
+            }
 
             // 4. 更新作业状态与结果
             stuHomework.setCompleteAndCorrect(3); // 标记为已批改
@@ -584,17 +647,33 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
      * 从OSS下载图片数据
      */
     private byte[] downloadOssImage(String bucketName, String endpoint, String objectName) throws Exception {
-        // 确保endpoint不包含http/https前缀
-        String cleanEndpoint = endpoint.replaceAll("^https?://", "");
+        // 确保endpoint包含协议前缀
+        String endpointWithScheme = endpoint.startsWith("http") ? endpoint : ("https://" + endpoint);
 
         // 创建OSS客户端
         com.aliyun.oss.OSS ossClient = new com.aliyun.oss.OSSClientBuilder()
-                .build(cleanEndpoint, accessKeyId, accessKeySecret);
+                .build(endpointWithScheme, accessKeyId, accessKeySecret);
 
         try {
             // 下载图片数据
             com.aliyun.oss.model.OSSObject ossObject = ossClient.getObject(bucketName, objectName);
             return IOUtils.toByteArray(ossObject.getObjectContent());
+        } finally {
+            ossClient.shutdown();
+        }
+    }
+
+    /**
+     * 生成带有效期的签名URL，便于外部服务（如大模型）直连访问私有OSS资源
+     */
+    private String generateSignedUrl(String bucketName, String endpoint, String objectName, int expireSeconds) {
+        String endpointWithScheme = endpoint.startsWith("http") ? endpoint : ("https://" + endpoint);
+        com.aliyun.oss.OSS ossClient = new com.aliyun.oss.OSSClientBuilder()
+                .build(endpointWithScheme, accessKeyId, accessKeySecret);
+        try {
+            java.util.Date expiration = new java.util.Date(System.currentTimeMillis() + expireSeconds * 1000L);
+            java.net.URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
+            return url.toString();
         } finally {
             ossClient.shutdown();
         }

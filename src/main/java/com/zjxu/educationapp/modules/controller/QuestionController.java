@@ -55,7 +55,7 @@ public class QuestionController {
     public ResponseEntity<QuestionResult> generateQuestions(
             @RequestParam String questionType,
             @RequestParam String questionStyle,
-            @RequestParam(defaultValue = "10") int totalCount, //用户动态传入
+            @RequestParam(defaultValue = "10") int totalCount,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "5") int pageSize) throws Exception {
         log.info("生成任意主题、题型的题目");
@@ -189,5 +189,30 @@ public class QuestionController {
         log.info("查看填空题");
         return errorQuestionsService.queryFillInBlank(subjectId,page,size);
     }
+
+    /**
+     * 开始对应学科错题循环练习
+     */
+    @Operation(summary = "开始对应学科错题循环练习")
+    @PostMapping("/practice/start")
+    public Result<List<ErrorQuestionsVO>> startPractice(
+            @RequestParam Integer subjectId,
+            @RequestParam(defaultValue = "10") int questionCount) {
+        Long studentId = StpUtil.getLoginIdAsLong();
+        return errorQuestionsService.initPractice(studentId, subjectId, questionCount);
+    }
+
+    /**
+     * 提交答案
+     */
+    @Operation(summary = "提交答案")
+    @PostMapping("/practice/submit")
+    public Result<PracticeNextVO> submitAnswer(
+            @RequestParam Long sessionId,
+            @RequestParam Integer questionId,
+            @RequestParam boolean isCorrect) {
+        return errorQuestionsService.submitAnswer(sessionId, questionId, isCorrect);
+    }
+
 
 }

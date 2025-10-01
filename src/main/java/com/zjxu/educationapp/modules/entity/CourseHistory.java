@@ -44,4 +44,9 @@ public class CourseHistory {
      * 上传时间
      */
     private Date uploadTime;
+
+    /**
+     * 学生id
+     */
+    private Long studentId;
 }

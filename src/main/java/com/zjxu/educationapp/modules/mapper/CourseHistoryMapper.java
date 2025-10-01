@@ -2,6 +2,7 @@ package com.zjxu.educationapp.modules.mapper;
 
 import com.zjxu.educationapp.modules.entity.CourseHistory;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author huawei
@@ -9,6 +10,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2025-09-21 19:44:37
 * @Entity com.zjxu.educationapp.modules.entity.CourseHistory
 */
+@Mapper
 public interface CourseHistoryMapper extends BaseMapper<CourseHistory> {
 
 }
