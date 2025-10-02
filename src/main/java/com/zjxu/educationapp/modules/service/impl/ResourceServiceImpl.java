@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.Resource;
+import com.zjxu.educationapp.modules.mapper.NewsMapper;
 import com.zjxu.educationapp.modules.service.ResourceService;
 import com.zjxu.educationapp.modules.mapper.ResourceMapper;
+import com.zjxu.educationapp.modules.vo.NewSimpleVO;
 import com.zjxu.educationapp.modules.vo.ResourceDetailVO;
 import com.zjxu.educationapp.modules.vo.ResourceSimpleVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,8 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource>
     implements ResourceService{
     @Autowired
     private ResourceMapper resourceMapper;
+    @Autowired
+    private NewsMapper newsMapper;
 
     /**
      * 获取资源列表
@@ -63,6 +67,8 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource>
                 .eq(Resource::getId, resourceId)
                 .eq(Resource::getStatus, 1)
                 .orderByDesc(Resource::getUpdateTime));
+        resource.setViewCount(resource.getViewCount() + 1);
+        resourceMapper.updateById(resource);
             ResourceDetailVO resourceDetailVO = ResourceDetailVO.builder()
                     .id(resource.getId())
                     .title(resource.getTitle())
@@ -76,6 +82,7 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource>
                     .build();
         return Result.ok(resourceDetailVO);
     }
+
 
 }
 

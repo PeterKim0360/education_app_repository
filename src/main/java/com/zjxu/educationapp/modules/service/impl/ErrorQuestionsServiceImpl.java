@@ -351,18 +351,18 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
 
     /**
      * 开始对应学科错题循环练习
+     *
      * @param studentId
      * @param subjectId
      * @param questionCount
      * @return
      */
-    @Override
-    public Result<List<ErrorQuestionsVO>> initPractice(Long studentId, Integer subjectId, int questionCount) {
+    private List<ErrorQuestionsVO> initPractice(Long studentId, Integer subjectId, int questionCount) {
         try {
             // 获取随机错题
             List<Integer> questions = getRandomErrorQuestions(studentId, subjectId, questionCount);
             if (questions.isEmpty()) {
-                return Result.error("该科目下没有错题");
+                return List.of();
             }
             // 创建练习会话
             PracticeSession session = new PracticeSession();
@@ -377,10 +377,12 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             practiceSessionMapper.insert(session);
             //获取题目信息
             List<ErrorQuestionsVO> questionsBatch = getQuestionsBatch(questions);
-            return Result.ok(questionsBatch);
+//            Map<Long, List<ErrorQuestionsVO>> map=new HashMap<>();
+//            map.put(session.getId(),questionsBatch);
+            return questionsBatch;
         } catch (Exception e) {
             log.error("初始化练习会话失败", e);
-            return Result.error("初始化失败");
+            return List.of();
         }
     }
 
@@ -473,7 +475,8 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             state.setCompleted(Objects.equals(session.getCompleted(), 1));
             state.setRemainingCount(questionQueue.size());
             state.setNextQuestion(questionQueue.isEmpty() ? null : questionQueue.get(0));
-            state.setPendingQueue(questionQueue);
+            List<ErrorQuestionsVO> questionsBatch = getQuestionsBatch(questionQueue);
+            state.setPendingQueue(questionsBatch);
             return Result.ok(state);
         } catch (Exception e) {
             log.error("获取练习状态失败", e);
@@ -498,9 +501,9 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             if (existing != null) {
                 return getPracticeState(existing.getId());
             }
-            Result<List<ErrorQuestionsVO>> init = initPractice(studentId, subjectId, questionCount);
-            if (!init.getSuccess()) {
-                return Result.error(init.getMessage());
+            List<ErrorQuestionsVO> init = initPractice(studentId, subjectId, questionCount);
+            if (init == null) {
+                return Result.error("初始化失败");
             }
             PracticeSession newest = practiceSessionMapper.selectOne(
                     new QueryWrapper<PracticeSession>()

@@ -1,16 +1,14 @@
 package com.zjxu.educationapp.modules.controller;
 
 import com.zjxu.educationapp.common.utils.Result;
-import com.zjxu.educationapp.modules.entity.CourseHistory;
-import com.zjxu.educationapp.modules.mapper.CourseHistoryMapper;
+import com.zjxu.educationapp.modules.entity.SemesterConfig;
+import com.zjxu.educationapp.modules.service.SemesterConfigService;
 import com.zjxu.educationapp.modules.service.StudentCoursesService;
-import com.zjxu.educationapp.modules.vo.CourseHistoryVO;
-import com.zjxu.educationapp.modules.vo.HomeworkInClassStuVO;
-import com.zjxu.educationapp.modules.vo.StuSubjectDetailVO;
-import com.zjxu.educationapp.modules.vo.StudentSubjectsVO;
+import com.zjxu.educationapp.modules.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +24,8 @@ import java.util.List;
 public class StudentCoursesController {
    @Autowired
    private StudentCoursesService studentCoursesService;
+   @Autowired
+   private SemesterConfigService semesterConfigService;
 
     /**
      * 查看所有课程
@@ -77,6 +77,56 @@ public class StudentCoursesController {
         log.info("用户请求获取历史课件");
         return studentCoursesService.queryFileList(subjectId);
     }
+
+//    /**
+//     * 查看学期并选择
+//     */
+//    @Operation(summary = "查看所有学期")
+//    @GetMapping("/semester")
+//    public Result<List<SemesterVO>> querySemester() {
+//        log.info("用户请求查看学期");
+//        List<SemesterConfig> semesterConfig = semesterConfigService.list();
+//        List<SemesterVO> semesterVOList = semesterConfig.stream().map(semesterConfig1 -> {
+//            SemesterVO semesterVO = new SemesterVO();
+//            BeanUtils.copyProperties(semesterConfig1, semesterVO);
+//            return semesterVO;
+//        }).toList();
+//        return Result.ok(semesterVOList);
+//    }
+//
+//    /**
+//     * 切换学期
+//     */
+//    @Operation(summary = "切换学期",description = "传参：semesterId")
+//    @PostMapping("/semester/change")
+//    public Result<Long> changeSemester(@RequestParam("semesterId") Long semesterId) {
+//        log.info("用户请求切换学期");
+//        return studentCoursesService.changeSemester(semesterId);
+//    }
+
+    /**
+     * 综合查询课表
+     */
+    @Operation(summary = "查询课表",description = "传参：week, 可选: weekday")
+    @GetMapping("/combined")
+    Result<List<ScheduleDetailVO>> queryCombinedSimple(
+            @RequestParam(value = "week") String week ,
+            @RequestParam(value = "weekday",required = false) String weekday){
+        return studentCoursesService.queryCombinedSimple(week,weekday);
+    }
+
+//    /**
+//     * 查询课表（详细）
+//     */
+//    @Operation(summary = "查询课表（详细）",description = "传参：courseId,semesterId")
+//    @GetMapping("/schedule/detail")
+//    public Result<ScheduleDetailVO> queryScheduleDetail(@RequestParam("courseId") Integer courseId,
+//                                                              @RequestParam(value = "semesterId") Long semesterId){
+//        log.info("用户请求查询课表（详细）");
+//        return studentCoursesService.queryScheduleDetail(courseId,semesterId);
+//    }
+
+    
 
 //     /**
 //     * 查看选课信息

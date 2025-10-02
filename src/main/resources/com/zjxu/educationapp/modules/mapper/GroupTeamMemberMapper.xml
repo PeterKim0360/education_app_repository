@@ -12,10 +12,11 @@
             <result property="role" column="role" />
             <result property="joinedTime" column="joined_time" />
             <result property="status" column="status" />
+        <result property="memberIndex" column="member_index" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,team_id,work_id,user_id,role,joined_time,
-        status
+        status,member_index
     </sql>
 </mapper>

@@ -8,4 +8,5 @@ public class StudentDTO {
     private String name;
     private String avatarUrl;  // 头像URL，可为null
     private Boolean isLeader = false;  // 是否为组长
+    private Integer memberIndex;
 }

@@ -8,12 +8,12 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 小组成员表
- * @TableName group_team_member
+ * 新闻表
+ * @TableName news
  */
-@TableName(value ="group_team_member")
+@TableName(value ="news")
 @Data
-public class GroupTeamMember {
+public class News {
     /**
      * 
      */
@@ -21,37 +21,42 @@ public class GroupTeamMember {
     private Long id;
 
     /**
-     * 小组id
+     * 新闻标题
      */
-    private Long teamId;
+    private String title;
 
     /**
-     * 随堂id
+     * 新闻摘要
      */
-    private Long workId;
+    private String summary;
 
     /**
-     * 当前用户id
+     * 封面图片URL
      */
-    private Long userId;
+    private String coverUrl;
 
     /**
-     * 角色：1,队长；2,成员
+     * 来源
      */
-    private Integer role;
+    private String source;
 
     /**
-     * 加入时间
+     * 发布时间
      */
-    private Date joinedTime;
+    private Date publishTime;
 
     /**
-     * 状态：1,有效;0,移除
+     * 浏览次数
      */
-    private Integer status;
+    private Integer viewCount;
 
     /**
-     * 小组中的位置
+     * 创建时间
      */
-    private Integer memberIndex;
+    private Date createdAt;
+
+    /**
+     * 更新时间
+     */
+    private Date updatedAt;
 }

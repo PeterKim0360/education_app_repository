@@ -66,14 +66,15 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
      */
     Result<IPage<FillInBlankVO>> queryFillInBlank(Integer subjectId, int page, int size);
 
-    /**
-     * 开始对应学科错题循环练习
-     * @param studentId
-     * @param subjectId
-     * @param questionCount
-     * @return
-     */
-    Result<List<ErrorQuestionsVO>> initPractice(Long studentId, Integer subjectId, int questionCount);
+//    /**
+//     * 开始对应学科错题循环练习
+//     *
+//     * @param studentId
+//     * @param subjectId
+//     * @param questionCount
+//     * @return
+//     */
+//    Result<List<ErrorQuestionsVO>> initPractice(Long studentId, Integer subjectId, int questionCount);
 
     @Transactional
     Result<PracticeNextVO> submitAnswer(Long sessionId, Integer questionId, boolean isCorrect);

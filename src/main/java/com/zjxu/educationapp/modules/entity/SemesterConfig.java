@@ -8,12 +8,12 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 小组成员表
- * @TableName group_team_member
+ * 学期表
+ * @TableName semester_config
  */
-@TableName(value ="group_team_member")
+@TableName(value ="semester_config")
 @Data
-public class GroupTeamMember {
+public class SemesterConfig {
     /**
      * 
      */
@@ -21,37 +21,37 @@ public class GroupTeamMember {
     private Long id;
 
     /**
-     * 小组id
+     * 学期名称
      */
-    private Long teamId;
+    private String semesterName;
 
     /**
-     * 随堂id
+     * 开学日期
      */
-    private Long workId;
+    private Date startDate;
 
     /**
-     * 当前用户id
+     * 结束日期
      */
-    private Long userId;
+    private Date endDate;
 
     /**
-     * 角色：1,队长；2,成员
+     * 当前教学周数
      */
-    private Integer role;
+    private Integer currentWeek;
 
     /**
-     * 加入时间
+     * 
      */
-    private Date joinedTime;
+    private Date createTime;
 
     /**
-     * 状态：1,有效;0,移除
+     * 
      */
-    private Integer status;
+    private Date updateTime;
 
     /**
-     * 小组中的位置
+     * 是否为当前学期：0-不是,1-是
      */
-    private Integer memberIndex;
+    private Integer isCurrent;
 }

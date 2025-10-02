@@ -1,22 +1,23 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.StudentCoursesService;
-import com.zjxu.educationapp.modules.vo.CourseHistoryVO;
-import com.zjxu.educationapp.modules.vo.HomeworkInClassStuVO;
-import com.zjxu.educationapp.modules.vo.StuSubjectDetailVO;
-import com.zjxu.educationapp.modules.vo.StudentSubjectsVO;
+import com.zjxu.educationapp.modules.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -34,6 +35,10 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
     private CourseHistoryMapper courseHistoryMapper;
     @Autowired
     private HomeworkInClassStuMapper  homeworkInClassStuMapper;
+    @Autowired
+    private SemesterConfigMapper semesterConfigMapper;
+    @Autowired
+    private ScheduleMapper scheduleMapper;
 
 
     /**
@@ -201,6 +206,100 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
         }).toList();
         return Result.ok(courseHistoryVOS);
     }
+
+//    /**
+//     * 切换学期
+//     */
+//    @Override
+//    public Result<Long> changeSemester(Long semesterId) {
+//        SemesterConfig semesterConfig = semesterConfigMapper.selectById(semesterId);
+//        if (semesterConfig == null){
+//            return Result.error("该学期不存在");
+//        }
+//        //更新当前学期状态
+//        semesterConfigMapper.update(null,
+//                new LambdaUpdateWrapper<SemesterConfig>()
+//                        .set(SemesterConfig::getIsCurrent, 0)
+//                        .eq(SemesterConfig::getIsCurrent,1));
+//        //设置新学期为当前学期
+//        semesterConfig.setIsCurrent(1);
+//        semesterConfigMapper.updateById(semesterConfig);
+//        return Result.ok(semesterConfig.getId());
+//    }
+
+    /**
+     * 获取课程安排
+     * @return
+     */
+    @Override
+    public Result<List<ScheduleDetailVO>> queryCombinedSimple(String week, String weekday) {
+        long studentId = StpUtil.getLoginIdAsLong();
+//        SemesterConfig semesterConfig = semesterConfigMapper.selectById(semesterId);
+//        if (semesterConfig == null){
+//            return Result.error("该学期不存在");
+//        }
+        //查询指定学期的课表
+        List<Schedule> schedules = scheduleMapper.selectList(new LambdaQueryWrapper<Schedule>()
+                .eq(Schedule::getWeek, week)
+                .eq(StrUtil.isNotEmpty(weekday),Schedule::getWeekday, weekday)
+                .eq(Schedule::getUserId, studentId)
+                .orderByAsc(Schedule::getWeekday)
+                .orderByAsc(Schedule::getCourseTime));
+        List<ScheduleDetailVO> scheduleDetailVOList = schedules.stream().map(schedule -> {
+            ScheduleDetailVO scheduleDetailVO = new ScheduleDetailVO();
+            BeanUtils.copyProperties(schedule, scheduleDetailVO);
+            Long teacherId = schedule.getTeacherId();
+            UserEntity teacher = userMapper.selectById(teacherId);
+            scheduleDetailVO.setTeachName(teacher.getUserName());
+            Boolean result = isCurrent(schedule);
+            scheduleDetailVO.setIsCurrent(result ? 1 : 0);
+            return scheduleDetailVO;
+        }).toList();
+        return Result.ok(scheduleDetailVOList);
+    }
+
+//    /**
+//     * 获取课程安排（详细）
+//     *
+//     * @param courseId
+//     * @param semesterId
+//     * @return
+//     */
+//    @Override
+//    public Result<ScheduleDetailVO> queryScheduleDetail(Integer courseId, Long semesterId) {
+//        long studentId = StpUtil.getLoginIdAsLong();
+//        Schedule schedule = scheduleMapper.selectOne(new LambdaQueryWrapper<Schedule>()
+//                .eq(Schedule::getCourseId, courseId)
+//                .eq(Schedule::getSemesterId, semesterId)
+//                .eq(Schedule::getUserId, studentId));
+//        if (schedule == null){
+//            return Result.error("该课程不存在");
+//        }
+//        ScheduleDetailVO scheduleDetailVO = new ScheduleDetailVO();
+//        BeanUtils.copyProperties(schedule, scheduleDetailVO);
+//        UserEntity userEntity = userMapper.selectById(schedule.getTeacherId());
+//        scheduleDetailVO.setTeachName(userEntity.getUserName());
+//        Boolean result = isCurrent(schedule);
+//        scheduleDetailVO.setIsCurrent(result ? 1 : 0);
+//        return Result.ok(scheduleDetailVO);
+//    }
+
+    /**
+     * 是否为当前课程
+     */
+    private Boolean isCurrent(Schedule schedule) {
+        if (schedule == null){
+            return false;
+        }
+        //获取当前时间
+        LocalTime now = LocalTime.now();
+        String currentTime = DateTimeFormatter.ofPattern("HH:mm").format(now);
+        String[] timeRange = schedule.getCourseTime().split("-");
+        LocalTime startTime = LocalTime.parse(timeRange[0]);
+        LocalTime endTime = LocalTime.parse(timeRange[1]);
+        return now.isAfter(startTime.minusMinutes(1)) && now.isBefore(endTime.plusMinutes(1));
+    }
+
 
 //    /**
 //     * 学生选课

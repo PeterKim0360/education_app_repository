@@ -1,10 +1,7 @@
 package com.zjxu.educationapp.modules.service;
 
 import com.zjxu.educationapp.common.utils.Result;
-import com.zjxu.educationapp.modules.vo.CourseHistoryVO;
-import com.zjxu.educationapp.modules.vo.HomeworkInClassStuVO;
-import com.zjxu.educationapp.modules.vo.StuSubjectDetailVO;
-import com.zjxu.educationapp.modules.vo.StudentSubjectsVO;
+import com.zjxu.educationapp.modules.vo.*;
 
 import java.util.List;
 
@@ -39,13 +36,29 @@ public interface StudentCoursesService {
      */
     Result<List<HomeworkInClassStuVO>> queryExpireWork(Integer subjectId);
 
+
+    Result<List<CourseHistoryVO>> queryFileList(Integer subjectId);
+
+//    Result<Long> changeSemester(Long semesterId);
+
+
+//    /**
+//     * 查询课表（详细）
+//     *
+//     * @param courseId
+//     * @param semesterId
+//     * @return
+//     */
+//    Result<ScheduleDetailVO> queryScheduleDetail(Integer courseId, Long semesterId);
+
     /**
-     * 获取历史课件
-     *
-     * @param subjectId
+     * 查询课表
+     * @param week
+     * @param weekday
      * @return
      */
-    Result<List<CourseHistoryVO>> queryFileList(Integer subjectId);
+    Result<List<ScheduleDetailVO>> queryCombinedSimple(String week, String weekday);
+
 
 //    /**
 //     * 选课

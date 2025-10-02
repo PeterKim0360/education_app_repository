@@ -1,30 +1,21 @@
 package com.zjxu.educationapp.modules.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.zjxu.educationapp.common.utils.MpListPageUtil;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.ErrorQuestionDTO;
 import com.zjxu.educationapp.modules.entity.*;
-import com.zjxu.educationapp.modules.mapper.SingleChoiceMapper;
 import com.zjxu.educationapp.modules.service.*;
 import com.zjxu.educationapp.modules.service.impl.QuestionService;
 import com.zjxu.educationapp.modules.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -190,17 +181,17 @@ public class QuestionController {
         return errorQuestionsService.queryFillInBlank(subjectId,page,size);
     }
 
-    /**
-     * 开始对应学科错题循环练习
-     */
-    @Operation(summary = "开始对应学科错题循环练习")
-    @PostMapping("/practice/start")
-    public Result<List<ErrorQuestionsVO>> startPractice(
-            @RequestParam Integer subjectId,
-            @RequestParam(defaultValue = "10") int questionCount) {
-        Long studentId = StpUtil.getLoginIdAsLong();
-        return errorQuestionsService.initPractice(studentId, subjectId, questionCount);
-    }
+//    /**
+//     * 开始对应学科错题循环练习
+//     */
+//    @Operation(summary = "开始对应学科错题循环练习")
+//    @PostMapping("/practice/start")
+//    public Result<Map<Long,List<ErrorQuestionsVO>>> startPractice(
+//            @RequestParam Integer subjectId,
+//            @RequestParam(defaultValue = "10") int questionCount) {
+//        Long studentId = StpUtil.getLoginIdAsLong();
+//        return errorQuestionsService.initPractice(studentId, subjectId, questionCount);
+//    }
 
     /**
      * 提交答案
@@ -213,6 +204,25 @@ public class QuestionController {
             @RequestParam boolean isCorrect) {
         return errorQuestionsService.submitAnswer(sessionId, questionId, isCorrect);
     }
+//
+//    /**
+//     * 获取当前练习状态（用于恢复）
+//     */
+//    @Operation(summary = "获取练习状态")
+//    @GetMapping("/practice/state")
+//    public Result<PracticeStateVO> getPracticeState(@RequestParam Long sessionId) {
+//        return errorQuestionsService.getPracticeState(sessionId);
+//    }
 
+    /**
+     * 恢复或开始练习
+     */
+    @Operation(summary = "恢复或开始练习")
+    @PostMapping("/practice/resume")
+    public Result<PracticeStateVO> resumeOrStart(@RequestParam Integer subjectId,
+                                                 @RequestParam(defaultValue = "10") int questionCount) {
+        Long studentId = StpUtil.getLoginIdAsLong();
+        return errorQuestionsService.resumeOrStart(studentId, subjectId, questionCount);
+    }
 
 }

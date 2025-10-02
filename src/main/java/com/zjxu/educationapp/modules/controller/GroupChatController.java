@@ -49,7 +49,7 @@ public class GroupChatController {
     }
 
     /**
-     * 发送消息
+     * 组内发送消息
      */
     @PostMapping("/sendMessage")
     @Operation(summary = "发送消息", description = "传参: messageDTO")
@@ -70,6 +70,21 @@ public class GroupChatController {
             log.error("发送消息失败", e);
         }
         return Result.ok(messageId);
+    }
+
+    /**
+     * 老师统一广播给每个小组
+     */
+    @PostMapping("/broadcast")
+    @Operation(summary = "老师统一广播给每个小组")
+    public Result<Void> broadcast(@RequestBody WebSocketMessageVO message) {
+        log.info("老师统一广播给每个小组");
+        try {
+            GroupChatEndpoint.broadcastToAllGroups(JSONObject.toJSONString(message));
+        } catch (IOException e) {
+            log.error("发送消息失败", e);
+        }
+        return Result.ok();
     }
 
 

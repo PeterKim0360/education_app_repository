@@ -118,15 +118,13 @@ public class GroupServiceImpl implements GroupService {
             allStudentIds.addAll(studentIds);
         }
         log.info("该课程的学生id：{}",allStudentIds);
-        //查看未满的小组（按当前人数升序排序）
+        //查看未满的小组
         List<GroupTeam> groups = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
                 .eq(GroupTeam::getSubjectId, subjectId)
                 .eq(GroupTeam::getCreatedBy, teacherId)
                 .eq(GroupTeam::getStatus, 0)
-                .apply("capacity > current_num")
-                .orderByAsc(GroupTeam::getCurrentNum));
+                .apply("capacity > current_num"));
         log.info("未满的小组：{}",groups);
-        String subjectName = subjectsMapper.selectById(subjectId).getSubjectName();
         //3.获取未选小组的学生id
         Iterator<Long> iterator = allStudentIds.iterator();
         while (iterator.hasNext()) {
@@ -143,50 +141,72 @@ public class GroupServiceImpl implements GroupService {
         log.info("未选小组的id：{}",allStudentIds);
         //随机打散未入组学生,进行洗牌
         Collections.shuffle(allStudentIds);
-        //将未选小组的id加入到未选小组中
+        // 将未选小组的id加入到未满小组中
         for (GroupTeam group : groups) {
             Long teamId = group.getId();
-            if (teamId==null){
+            Integer capacity = group.getCapacity();
+            if (teamId == null) {
                 log.error("小组ID不能为空");
                 return Result.error("小组ID不能为空");
             }
             GroupTeam groupTeam = groupTeamMapper.selectById(teamId);
-            if (groupTeam.getStatus()==1){
+            if (groupTeam.getStatus() == 1) {
                 log.error("小组已锁定");
                 return Result.error("小组已锁定");
             }
-            for (Long studentId : allStudentIds) {
-                long existingMemberCount = groupTeamMemberMapper.selectCount(
-                        new LambdaQueryWrapper<GroupTeamMember>()
-                                .eq(GroupTeamMember::getUserId, studentId)
-                                .eq(GroupTeamMember::getStatus, 1)
-                );
-                if (existingMemberCount > 0) {
-                    // 学生已在此小组，跳过
-                    continue;
-                }
-                Integer currentNum = groupTeam.getCurrentNum();
-                if (currentNum>=groupTeam.getCapacity()) {
-                    log.info("小组已满");
-                    continue;
-                }
-                //将小组人数+1
-                groupTeam.setCurrentNum(currentNum+1);
-                groupTeamMapper.updateById(groupTeam);
 
-                GroupTeamMember groupTeamMember = new GroupTeamMember();
-                groupTeamMember.setTeamId(teamId);
-                groupTeamMember.setUserId(studentId);
-                groupTeamMember.setWorkId(groupTeam.getWorkId());
-                if (groupTeam.getCurrentNum()==1){
-                    //将当前用户匹配为队长
-                    groupTeamMember.setRole(1);
-                    groupTeam.setLeaderId(studentId);
-                    groupTeamMapper.updateById(groupTeam);
+            // 获取当前小组成员信息
+            List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
+                    .eq(GroupTeamMember::getTeamId, teamId)
+                    .eq(GroupTeamMember::getStatus, 1)
+                    .orderByAsc(GroupTeamMember::getMemberIndex));
+
+            // 创建位置占用映射
+            Set<Integer> occupiedPositions = new HashSet<>();
+            for (GroupTeamMember member : groupTeamMembers) {
+                occupiedPositions.add(member.getMemberIndex());
+            }
+
+            // 使用迭代器安全遍历学生列表
+            Iterator<Long> iterator1 = allStudentIds.iterator();
+            while (iterator1.hasNext() && groupTeamMembers.size() < capacity) {
+                Long studentId = iterator1.next();
+
+                // 寻找第一个空缺位置
+                for (int i = 0; i < capacity; i++) {
+                    if (!occupiedPositions.contains(i)) {
+                        // 找到空位置，分配学生
+                        groupTeam.setCurrentNum(groupTeam.getCurrentNum() + 1);
+                        groupTeamMapper.updateById(groupTeam);
+
+                        // 插入小组成员
+                        GroupTeamMember groupTeamMember = new GroupTeamMember();
+                        groupTeamMember.setTeamId(teamId);
+                        groupTeamMember.setUserId(studentId);
+                        groupTeamMember.setWorkId(groupTeam.getWorkId());
+                        groupTeamMember.setMemberIndex(i);
+
+                        // 第一个成员设为队长
+                        if (groupTeamMembers.isEmpty() && occupiedPositions.isEmpty()) {
+                            groupTeamMember.setRole(1);
+                            groupTeam.setLeaderId(studentId);
+                            groupTeamMapper.updateById(groupTeam);
+                        } else {
+                            groupTeamMember.setRole(2);
+                        }
+
+                        groupTeamMemberMapper.insert(groupTeamMember);
+                        occupiedPositions.add(i);
+                        groupTeamMembers.add(groupTeamMember);
+
+                        // 从待分配列表中移除
+                        iterator1.remove();
+                        break;
+                    }
                 }
-                groupTeamMemberMapper.insert(groupTeamMember);
             }
         }
+
         return Result.ok();
     }
 
@@ -271,16 +291,42 @@ public class GroupServiceImpl implements GroupService {
 
             List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
                     .eq(GroupTeamMember::getTeamId, teamId)
-                    .eq(GroupTeamMember::getStatus, 1));
-            List<StudentDTO> students = groupTeamMembers.stream().map(groupTeamMember -> {
-                StudentDTO studentDTO = new StudentDTO();
-                UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
-                studentDTO.setId(Math.toIntExact(userEntity.getId()));
-                studentDTO.setName(userEntity.getUserName());
-                studentDTO.setAvatarUrl(userEntity.getAvatarUrl());
-                studentDTO.setIsLeader(groupTeamMember.getRole()==1);
-                return studentDTO;
-            }).toList();
+                    .eq(GroupTeamMember::getStatus, 1)
+                    .orderByAsc(GroupTeamMember::getMemberIndex));
+//            List<StudentDTO> students = new ArrayList<>(groupTeamMembers.stream().map(groupTeamMember -> {
+//                StudentDTO studentDTO = new StudentDTO();
+//                UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
+//                studentDTO.setId(Math.toIntExact(userEntity.getId()));
+//                studentDTO.setName(userEntity.getUserName());
+//                studentDTO.setAvatarUrl(userEntity.getAvatarUrl());
+//                studentDTO.setIsLeader(groupTeamMember.getRole() == 1);
+//                studentDTO.setIndex(groupTeamMember.getIndex());
+//                return studentDTO;
+//            }).toList());
+            List<StudentDTO> students = new ArrayList<>();
+            int num=0;
+            for (int i = 0; i < groupTeam.getCapacity(); i++) {
+                if (num>=groupTeamMembers.size()){
+                    students.add(null);
+                    num++;
+                    continue;
+                }
+                if (i!=groupTeamMembers.get(num).getMemberIndex()){
+                    students.add(new StudentDTO());
+                }else {
+                    GroupTeamMember groupTeamMember = groupTeamMembers.get(num);
+                    StudentDTO studentDTO = new StudentDTO();
+                    UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
+                    studentDTO.setId(Math.toIntExact(userEntity.getId()));
+                    studentDTO.setName(userEntity.getUserName());
+                    studentDTO.setAvatarUrl(userEntity.getAvatarUrl());
+                    studentDTO.setIsLeader(groupTeamMember.getRole() == 1);
+                    studentDTO.setMemberIndex(groupTeamMember.getMemberIndex());
+                    students.add(studentDTO);
+                }
+                num++;
+            }
+
             groupTeamVO.setStudents(students);
             list.add(groupTeamVO);
         }
@@ -308,6 +354,16 @@ public class GroupServiceImpl implements GroupService {
             log.error("小组已满");
             return Result.error("小组已满");
         }
+        Integer memberIndex = joinStuDTO.getStudent().getMemberIndex();
+        //判断该位置是否有人了
+        Long count1 = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
+                .eq(GroupTeamMember::getTeamId, teamId)
+                .eq(GroupTeamMember::getMemberIndex, memberIndex)
+                .eq(GroupTeamMember::getStatus, 1));
+        if (count1>0){
+            log.error("该位置有人了");
+            return Result.error("该位置有人了");
+        }
         //将小组人数+1
         groupTeam.setCurrentNum(currentNum+1);
         groupTeamMapper.updateById(groupTeam);
@@ -316,6 +372,7 @@ public class GroupServiceImpl implements GroupService {
         GroupTeamMember groupTeamMember = new GroupTeamMember();
         groupTeamMember.setTeamId(teamId);
         groupTeamMember.setUserId(Long.valueOf(userId));
+        groupTeamMember.setMemberIndex(memberIndex);
         if (isLeader){
             groupTeamMember.setRole(1);
             groupTeam.setLeaderId(Long.valueOf(userId));

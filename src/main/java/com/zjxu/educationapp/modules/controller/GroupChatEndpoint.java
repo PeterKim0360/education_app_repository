@@ -16,6 +16,7 @@ import com.zjxu.educationapp.modules.service.GroupChatService;
 import com.zjxu.educationapp.modules.vo.WebSocketMessageVO;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
@@ -127,6 +128,10 @@ public class GroupChatEndpoint {
     private boolean isAuthorized(Long teamId, Long userId) {
         GroupTeam team = groupTeamMapper.selectById(teamId);
         if (team == null) { return false; }
+        //教师可以随意进入
+        if (Objects.equals(userId, team.getCreatedBy())){
+            return true;
+        }
         if (team.getCreatedBy() != null && team.getCreatedBy().equals(userId)) { return true; }
         Long count = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
                 .eq(GroupTeamMember::getTeamId, teamId)
@@ -143,6 +148,12 @@ public class GroupChatEndpoint {
         return count != null && count > 0;
     }
 
+    /**
+     * 组内广播
+     * @param teamId
+     * @param text
+     * @throws IOException
+     */
     public static void broadcastToRoom(Long teamId, String text) throws IOException {
         Map<String, Session> sessions = ROOM_SESSIONS.get(teamId);
         if (sessions == null) { return; }
@@ -152,6 +163,18 @@ public class GroupChatEndpoint {
             }
         }
     }
+
+    /**
+     * 老师能发给所有小组
+     * @param text
+     * @throws IOException
+     */
+    public static void broadcastToAllGroups(String text) throws IOException {
+        for (Long teamId : ROOM_SESSIONS.keySet()) {
+            broadcastToRoom(teamId, text);
+        }
+    }
+
 
     private void sendAuthErrorAndClose(Session session, Object authError) {
         try {

@@ -11,5 +11,6 @@ public class GroupTeamVO {
     private String name;
     private int capacity;
     private int currentCount;
+
     private List<StudentDTO> students;
 }
