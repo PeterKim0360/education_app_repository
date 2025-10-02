@@ -46,11 +46,12 @@ spring:
       chat:
         options:
           model: qwen-plus
-# 豆包AI模型
+    doubao:
+      api-key: ${API_KEY}
+      model-name: doubao-seed-1-6-vision-250815
 doubao:
   api-key: 19fedc42-721c-46d2-a26a-eff2b4caf67b
-  model-name: doubao-seed-1-6-vision-250815  # 或其他豆包大模型名称
-
+  model-name: doubao-seed-1-6-vision-250815
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
   # token 名称（同时也是 cookie 名称）
@@ -75,8 +76,7 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: true
-dashscope:
-  api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
+
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:

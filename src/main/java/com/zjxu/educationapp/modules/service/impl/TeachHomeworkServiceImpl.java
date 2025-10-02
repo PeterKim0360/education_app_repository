@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.config.DashScopeConfig;
+import com.zjxu.educationapp.common.config.DoubaoConfig;
 import com.zjxu.educationapp.common.constant.ErrorCode;
 import com.zjxu.educationapp.common.utils.AliOSSUtil;
 import com.zjxu.educationapp.common.utils.Result;
@@ -62,17 +63,15 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     @Autowired
     private DashScopeConfig dashScopeConfig;
 
-    @Value("${doubao.api-key:}")
-    private String doubaoApiKey;
+    @Autowired
+    private DoubaoConfig doubaoConfig;
 
-    @Value("${doubao.model-name:doubao-seed-1-6-vision-250815}")
+    @Value("${ai.doubao.model-name:doubao-seed-1-6-vision-250815}")
     private String doubaoModelName;
 
     @Value("${doubao.base-url:https://ark.cn-beijing.volces.com/api/v3}")
     private String doubaoBaseUrl;
 
-    @Autowired
-    private AliOSSUtil aliOSSUtil;
 
     private final String SYSTEMPROMPT = "你是一位专业的教育工作者和作业设计专家。请根据用户提供的要求生成一份结构完整的作业，包含以下信息：\n" +
             "1. 作业标题（homeworkName）\n" +
@@ -561,7 +560,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 .dispatcher(dispatcher)
                 .connectionPool(connectionPool)
                 .baseUrl(doubaoBaseUrl)
-                .apiKey(doubaoApiKey)
+                .apiKey(doubaoConfig.getApiKey())
                 .build();
 
         try {
