@@ -14,6 +14,7 @@ import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.LiveRoomService;
 import com.zjxu.educationapp.modules.vo.LiveRoomDetailVO;
+import com.zjxu.educationapp.modules.vo.OnlineUserVO;
 import com.zjxu.educationapp.modules.vo.StudentLiveRoomVO;
 import com.zjxu.educationapp.modules.vo.TeacherLiveRoomVO;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
             // 批量插入所有关联关系，只进行一次数据库通信
             liveRoomClassMapper.insertBatch(liveRoomClassList);
         }
-        return Result.ok("创建直播间成功");
+        return Result.ok(liveRoomEntity.getLiveId());
     }
 
     @Override
@@ -287,6 +288,85 @@ public class LiveRoomServiceImpl extends ServiceImpl<LiveRoomMapper, LiveRoomEnt
         // 从直播间在线用户集合中移除用户ID
         stringRedisTemplate.opsForSet().remove(onlineUsersKey, String.valueOf(userId));
         return Result.ok("退出直播间成功");
+    }
+
+    @Override
+    public Result<List<OnlineUserVO>> getOnlineUsers(Integer liveRoomId) {
+        try {
+            // 检查直播间是否存在
+            LiveRoomEntity liveRoom = this.getById(liveRoomId);
+            if (liveRoom == null) {
+                return Result.error("直播间不存在");
+            }
+
+            // 构造Redis key
+            String onlineUsersKey = RedisConstant.LIVE_ROOM_ONLINE_USERS + liveRoomId;
+            
+            // 从Redis中获取所有在线用户ID
+            var onlineUserIds = stringRedisTemplate.opsForSet().members(onlineUsersKey);
+            
+            if (onlineUserIds == null || onlineUserIds.isEmpty()) {
+                log.info("直播间 {} 当前无在线用户", liveRoomId);
+                return Result.ok(new ArrayList<>());
+            }
+
+            List<OnlineUserVO> onlineUsers = new ArrayList<>();
+            
+            // 遍历用户ID，获取用户详细信息
+            for (String userIdStr : onlineUserIds) {
+                try {
+                    Long userId = Long.parseLong(userIdStr);
+                    
+                    // 查询用户基本信息
+                    UserEntity user = userMapper.selectById(userId);
+                    if (user == null) {
+                        log.warn("用户 {} 不存在，从在线列表中移除", userId);
+                        stringRedisTemplate.opsForSet().remove(onlineUsersKey, userIdStr);
+                        continue;
+                    }
+
+                    OnlineUserVO onlineUserVO = new OnlineUserVO();
+                    onlineUserVO.setUserId(user.getId());
+                    onlineUserVO.setUserName(user.getUserName());
+                    onlineUserVO.setAvatarUrl(user.getAvatarUrl());
+                    onlineUserVO.setIdentity(user.getIdentity());
+                    onlineUserVO.setJoinTime(System.currentTimeMillis()); // 简化处理，使用当前时间
+
+                    // 如果是学生，获取班级信息
+                    if (user.getIdentity() != null && user.getIdentity() == 0) { // 0-学生
+                        try {
+                            StudentClassEntity studentClass = studentClassMapper.selectOne(
+                                new LambdaQueryWrapper<StudentClassEntity>()
+                                    .eq(StudentClassEntity::getStudentId, userId)
+                            );
+                            if (studentClass != null) {
+                                ClassEntity classEntity = classMapper.selectById(studentClass.getClassId());
+                                if (classEntity != null) {
+                                    onlineUserVO.setClassName(classEntity.getClassName());
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.warn("获取学生 {} 班级信息失败", userId, e);
+                        }
+                    }
+
+                    onlineUsers.add(onlineUserVO);
+                    
+                } catch (NumberFormatException e) {
+                    log.warn("无效的用户ID格式: {}", userIdStr);
+                    stringRedisTemplate.opsForSet().remove(onlineUsersKey, userIdStr);
+                } catch (Exception e) {
+                    log.error("处理用户 {} 信息时发生错误", userIdStr, e);
+                }
+            }
+
+            log.info("获取直播间 {} 在线用户列表成功，用户数量: {}", liveRoomId, onlineUsers.size());
+            return Result.ok(onlineUsers);
+            
+        } catch (Exception e) {
+            log.error("获取直播间在线用户列表失败，liveRoomId: {}", liveRoomId, e);
+            return Result.error("获取在线用户列表失败: " + e.getMessage());
+        }
     }
 }
 

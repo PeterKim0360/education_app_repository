@@ -144,17 +144,17 @@ public class UserChatServiceImpl implements UserChatService {
         List<UserChatMessage> asFromList = userChatMessageMapper.selectChatFriendsIdAsFrom(currentUserId);
         //混起来之前有个问题，就是说不能确定当前要的是to还是from
         asToList.sort((o1, o2) -> {
-            return (int) (o2.getSendTime().toInstant().getEpochSecond() - o1.getSendTime().toInstant().getEpochSecond());
+            return (int) (o2.getSendTime().getTime() - o1.getSendTime().getTime());
         });
         //若o2>o1,那么o2在前，o1在后，降序排序
         asFromList.sort((o1, o2) -> {
-            return (int) (o2.getSendTime().toInstant().getEpochSecond() - o1.getSendTime().toInstant().getEpochSecond());
+            return (int) (o2.getSendTime().getTime() - o1.getSendTime().getTime());
         });
         List<Long> res = new ArrayList<>();
         int i1 = 0, i2 = 0;
         while (i1 < asToList.size() && i2 < asFromList.size()) {
-            long toInstant = asToList.get(i1).getSendTime().toInstant().getEpochSecond();
-            long fromInstant = asFromList.get(i2).getSendTime().toInstant().getEpochSecond();
+            long toInstant = asToList.get(i1).getSendTime().getTime();
+            long fromInstant = asFromList.get(i2).getSendTime().getTime();
             if (toInstant > fromInstant) {
                 res.add(asToList.get(i1).getFromUserId());
                 i1++;

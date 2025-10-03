@@ -5,6 +5,7 @@ import com.zjxu.educationapp.modules.dto.LiveRoomDTO;
 import com.zjxu.educationapp.modules.entity.LiveRoomEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.LiveRoomDetailVO;
+import com.zjxu.educationapp.modules.vo.OnlineUserVO;
 import com.zjxu.educationapp.modules.vo.TeacherLiveRoomVO;
 import org.springframework.http.ResponseEntity;
 
@@ -44,4 +45,11 @@ public interface LiveRoomService extends IService<LiveRoomEntity> {
      * @return 在线人数
      */
     Result<String> studentExitLiveRoom(Integer liveRoomId);
+    
+    /**
+     * 获取直播间在线用户列表
+     * @param liveRoomId 直播间ID
+     * @return 在线用户列表
+     */
+    Result<List<OnlineUserVO>> getOnlineUsers(Integer liveRoomId);
 }

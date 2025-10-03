@@ -12,12 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.zjxu.educationapp.common.constant.SecurityConstant;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
-
+@Slf4j
 public class WebSocketConfigurator extends ServerEndpointConfig.Configurator {
 
     /* +NOTE 关于拦截websocket请求

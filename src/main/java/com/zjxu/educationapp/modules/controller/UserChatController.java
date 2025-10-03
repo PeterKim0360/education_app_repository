@@ -109,7 +109,7 @@ public class UserChatController {
         }
     }
 
-    @Operation(summary = "获取聊天好友ID列表", description = "根据发送时间降序返回好友用户id")
+    @Operation(summary = "获取聊天好友ID列表", description = "根据消息发送时间降序返回好友用户id")
     @GetMapping("/friends")
     public Result<List<Long>> getChatFriendsId(){
         log.info("获取聊天好友ID列表");

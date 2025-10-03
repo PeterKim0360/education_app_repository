@@ -6,6 +6,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.LiveRoomDTO;
 import com.zjxu.educationapp.modules.service.LiveRoomService;
 import com.zjxu.educationapp.modules.vo.LiveRoomDetailVO;
+import com.zjxu.educationapp.modules.vo.OnlineUserVO;
 import com.zjxu.educationapp.modules.vo.TeacherLiveRoomVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -84,5 +85,12 @@ public class LiveRoomController {
     public Result<String> studentExitLiveRoom(@PathVariable Integer liveId) {
         log.info("学生退出直播间：{}", liveId);
         return liveRoomService.studentExitLiveRoom(liveId);
+    }
+
+    @GetMapping("/online-users/{liveId}")
+    @Operation(summary = "获取直播间在线用户列表", description = "返回当前直播间所有在线用户的详细信息")
+    public Result<List<OnlineUserVO>> getOnlineUsers(@PathVariable Integer liveId) {
+        log.info("获取直播间在线用户列表，liveId: {}", liveId);
+        return liveRoomService.getOnlineUsers(liveId);
     }
 }

@@ -2,7 +2,7 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: dev
+    active: prod
   application:
     name: education-app
   jackson:
@@ -32,6 +32,12 @@ spring:
     multipart:
       max-file-size: 100MB     # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-plus
 
 #mybatis-plus不是spring的子级，而是配置文件的第一级
 mybatis-plus:
@@ -42,12 +48,6 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 
-  ai:
-    dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
-      chat:
-        options:
-          model: qwen-plus
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
   # token 名称（同时也是 cookie 名称）
@@ -99,6 +99,10 @@ education:
     access-key-id: ${OSS_ACCESS_KEY_ID:}
     access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
     bucket-name: classroom-interaction
+# 日志配置 - 使用自定义拦截器后，不再需要复杂的日志级别配置
+# logging:
+#   level:
+#     root: INFO
 #测试用
 #server:
 #  port: 9000

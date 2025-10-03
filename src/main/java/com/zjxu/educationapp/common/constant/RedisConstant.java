@@ -5,4 +5,5 @@ public class RedisConstant {
     public static final String COMMENT_LIKE = "post:comment:like:";
 
     public static final String LIVE_ROOM_ONLINE_USERS = "live:room:online:users:";
+    public static final String LIVE_ROOM_MESSAGE = "live:room:id:";
 }
