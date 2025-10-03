@@ -25,8 +25,8 @@ public class CustomSaTokenInterceptor implements HandlerInterceptor {
     private final List<String> excludePaths = Arrays.asList(
         "/user/login", "/user/register", "/user/info/",
         "/test/", "/common/", "/callback/stream/",
-        "/doc.html", "/webjars/", "/swagger-resources/", "/v2/api-docs/", "/v3/api-docs/",
-        "/swagger-ui.html", "/swagger-ui/", "/favicon.ico", "/error", "/actuator/",
+        "/doc.html", "/webjars", "/swagger-resources", "/v2/api-docs", "/v3/api-docs",
+        "/swagger-ui.html", "/swagger-ui", "/favicon.ico", "/error", "/actuator",
         "/single/chat/"
     );
 

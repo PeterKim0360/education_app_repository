@@ -49,6 +49,7 @@ mybatis-plus:
   type-aliases-package: com.zjxu.educationapp.modules.entity
   configuration:
     map-underscore-to-camel-case: true
+
 doubao:
   api-key: 19fedc42-721c-46d2-a26a-eff2b4caf67b
   model-name: doubao-seed-1-6-vision-250815
@@ -77,6 +78,9 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: true
+
+dashscope:
+  api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
 
 # springdoc-openapi项目配置
 springdoc:

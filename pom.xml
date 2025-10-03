@@ -34,7 +34,8 @@
         <mysql.version>8.0.31</mysql.version>
         <fastjson.version>2.0.42</fastjson.version>
         <lombok.version>1.18.34</lombok.version>
-        <knife4j.version>4.5.0</knife4j.version>
+        <knife4j.version>4.3.0</knife4j.version>
+        <swagger.version>2.2.8</swagger.version>
         <dashscope.version>2.21.5</dashscope.version>
         <aliyun.sdk.oss>3.17.4</aliyun.sdk.oss>
 <!--        <spring-aliyun-ai.version>1.0.0-M6.1</spring-aliyun-ai.version>-->
@@ -144,6 +145,26 @@
         </dependency>
 
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-core</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
