@@ -6,6 +6,9 @@ import com.zjxu.educationapp.modules.dto.ErrorQuestionDTO;
 import com.zjxu.educationapp.modules.entity.ErrorQuestions;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.*;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
 * @author huawei
@@ -62,4 +65,42 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
      * @return
      */
     Result<IPage<FillInBlankVO>> queryFillInBlank(Integer subjectId, int page, int size);
+
+//    /**
+//     * 开始对应学科错题循环练习
+//     *
+//     * @param studentId
+//     * @param subjectId
+//     * @param questionCount
+//     * @return
+//     */
+//    Result<List<ErrorQuestionsVO>> initPractice(Long studentId, Integer subjectId, int questionCount);
+
+    @Transactional
+    Result<PracticeNextVO> submitAnswer(Long sessionId, Integer questionId, boolean isCorrect);
+
+    /**
+     * 获取练习当前状态（用于恢复进度）
+     * @param sessionId
+     * @return
+     */
+    Result<PracticeStateVO> getPracticeState(Long sessionId);
+
+    /**
+     * 查找该学生该学科未完成的会话（如有则返回状态，否则新建）
+     * @param studentId
+     * @param subjectId
+     * @param questionCount 当不存在会话时用于初始化的数量
+     * @return
+     */
+    Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount);
+//
+//    /**
+//     * 批量获取题目详情
+//     *
+//     * @param questionIds
+//     * @param subjectId
+//     * @return
+//     */
+//    Result<List<ErrorQuestionsVO>> getQuestionsBatch(List<Integer> questionIds, Integer subjectId);
 }

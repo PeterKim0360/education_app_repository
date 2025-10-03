@@ -56,16 +56,9 @@ public interface TeacherService {
     Result<?> addStus(List<Long> stuIds, Long classId);
 
     /**
-     * 开始上课
-     * @param subjectId
+     * 匹配班级
+     * @param subjectIds
      * @return
      */
-    Result<?> startClass(Integer subjectId);
-
-    /**
-     * 结束上课
-     * @param subjectId
-     * @return
-     */
-    Result<?> endClass(Integer subjectId);
+    Result<?> matchClass(List<Integer> subjectIds);
 }

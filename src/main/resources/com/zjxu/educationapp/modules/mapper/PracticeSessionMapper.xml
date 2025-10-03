@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.PracticeSessionMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.PracticeSession">
+            <id property="id" column="id" />
+            <result property="studentId" column="student_id" />
+            <result property="subjectId" column="subject_id" />
+            <result property="questionQueue" column="question_queue" />
+            <result property="wrongQuestions" column="wrong_questions" />
+            <result property="currentBatch" column="current_batch" />
+            <result property="totalBatches" column="total_batches" />
+            <result property="completed" column="completed" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,student_id,subject_id,question_queue,wrong_questions,current_batch,
+        total_batches,completed,create_time,update_time
+    </sql>
+</mapper>

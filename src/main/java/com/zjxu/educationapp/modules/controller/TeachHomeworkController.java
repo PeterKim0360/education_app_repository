@@ -188,7 +188,6 @@ public class TeachHomeworkController {
     /**
      * AI批改作业（图片提交）
      */
-    //TODO 待完善
     @Operation(summary = "AI批改作业", description = "传参：stuHWSubmitDTO")
     @PostMapping("/correct/ai")
     @Transactional

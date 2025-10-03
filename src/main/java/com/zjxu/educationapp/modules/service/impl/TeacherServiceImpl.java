@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -34,6 +35,8 @@ public class TeacherServiceImpl implements TeacherService {
     private StudentClassMapper studentClassMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private SubjectClassMapper subjectClassMapper;
 
 
     /**
@@ -180,47 +183,38 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     /**
-     * 开始上课
-     *
-     * @param subjectId
+     * 匹配班级
+     * @param subjectIds
      * @return
      */
     @Override
-    public Result<?> startClass(Integer subjectId) {
+    public Result<?> matchClass(List<Integer> subjectIds) {
+        //获取当前教师ID
         long teacherId = StpUtil.getLoginIdAsLong();
-        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
-                .eq(SubjectClassTeach::getSubjectId, subjectId)
-                .eq(SubjectClassTeach::getTeachId, teacherId)
-                .eq(SubjectClassTeach::getStatus, 0));
-        for (SubjectClassTeach subjectClassTeach : subjectClassTeaches) {
-            subjectClassTeach.setStatus(1);
-            subjectClassTeachMapper.update(subjectClassTeach,new LambdaQueryWrapper<SubjectClassTeach>()
-                    .eq(SubjectClassTeach::getSubjectId, subjectId)
-                    .eq(SubjectClassTeach::getTeachId, teacherId)
-                    .eq(SubjectClassTeach::getClassId,subjectClassTeach.getClassId()));
+        if (subjectIds==null|| subjectIds.isEmpty()){
+            log.info("未选择要匹配的学科");
+            return Result.error();
         }
-        return Result.ok();
-    }
-
-    /**
-     * 结束上课
-     *
-     * @param subjectId
-     * @return
-     */
-    @Override
-    public Result<?> endClass(Integer subjectId) {
-        long teacherId = StpUtil.getLoginIdAsLong();
-        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
-                .eq(SubjectClassTeach::getSubjectId, subjectId)
-                .eq(SubjectClassTeach::getTeachId, teacherId)
-                .eq(SubjectClassTeach::getStatus, 1));
-        for (SubjectClassTeach subjectClassTeach : subjectClassTeaches) {
-            subjectClassTeach.setStatus(0);
-            subjectClassTeachMapper.update(subjectClassTeach,new LambdaQueryWrapper<SubjectClassTeach>()
-                    .eq(SubjectClassTeach::getSubjectId, subjectId)
-                    .eq(SubjectClassTeach::getTeachId, teacherId)
-                    .eq(SubjectClassTeach::getClassId,subjectClassTeach.getClassId()));
+        for (Integer subjectId : subjectIds) {
+            //根据科目id分别查到3个未被占用的班级id
+            List<SubjectClass> subjectClasses = subjectClassMapper.selectList(new LambdaQueryWrapper<SubjectClass>()
+                    .eq(SubjectClass::getSubjectId, subjectId)
+                    .eq(SubjectClass::getStatus, 0)
+                    .last("limit 3"));
+            for (SubjectClass subjectClass : subjectClasses) {
+                subjectClass.setStatus(1);
+                subjectClassMapper.updateById(subjectClass);
+            }
+            //获取班级Ids
+            List<Long> classIds = subjectClasses.stream().map(SubjectClass::getClassId).toList();
+            //存入数据库
+            for (Long classId : classIds) {
+                SubjectClassTeach subjectClassTeach = new SubjectClassTeach();
+                subjectClassTeach.setSubjectId(subjectId);
+                subjectClassTeach.setClassId(classId);
+                subjectClassTeach.setTeachId(teacherId);
+                subjectClassTeachMapper.insert(subjectClassTeach);
+            }
         }
         return Result.ok();
     }

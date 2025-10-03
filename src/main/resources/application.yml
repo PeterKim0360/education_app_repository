@@ -38,7 +38,9 @@ spring:
       chat:
         options:
           model: qwen-plus
-
+    doubao:
+      api-key: ${API_KEY}
+      model-name: doubao-seed-1-6-vision-250815
 #mybatis-plus不是spring的子级，而是配置文件的第一级
 mybatis-plus:
   #配置mapper.xml文件所在目录，只有多模块且mapper所在目录完全相同，才需要用到classpath*；不同模块的mapper必须避免名字重复
@@ -47,6 +49,9 @@ mybatis-plus:
   type-aliases-package: com.zjxu.educationapp.modules.entity
   configuration:
     map-underscore-to-camel-case: true
+doubao:
+  api-key: 19fedc42-721c-46d2-a26a-eff2b4caf67b
+  model-name: doubao-seed-1-6-vision-250815
 
 ############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
 sa-token:
@@ -72,8 +77,7 @@ sa-token:
   is-read-header: true
   is-read-body: false
   is-read-cookie: true
-dashscope:
-  api-key: sk-5d4f608694074a78beb8be872850d541  # 通义千问大模型API Key
+
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:

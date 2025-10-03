@@ -123,6 +123,12 @@
             <version>${aliyun.sdk.oss}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.volcengine</groupId>
+            <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
+            <version>LATEST</version>
+        </dependency>
+
         <!--        阿里云AI调用-->
 <!--        <dependency>-->
 <!--            <groupId>com.alibaba.cloud.ai</groupId>-->

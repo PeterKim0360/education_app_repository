@@ -3,6 +3,8 @@ package com.zjxu.educationapp.modules.vo;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Data
 public class StuSubjectDetailVO {
@@ -10,7 +12,5 @@ public class StuSubjectDetailVO {
     private Integer subjectId;
     private String teacherName;
     private Long teacherId;
-    private Date uploadTime;
-    private String fileUrl;
-    private String fileDescription;
+    private Map<String, String> file;
 }

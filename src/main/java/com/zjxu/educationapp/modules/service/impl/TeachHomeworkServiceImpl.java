@@ -1,21 +1,22 @@
 package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.alibaba.dashscope.exception.ApiException;
-import com.zjxu.educationapp.modules.controller.AIHomeworkCorrector;
-import org.apache.commons.io.IOUtils;
+
+import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionContentPart;
+import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
+import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
+import com.volcengine.ark.runtime.model.completion.chat.ChatMessageRole;
+import com.volcengine.ark.runtime.service.ArkService;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
-import com.aliyun.oss.model.OSSObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjxu.educationapp.common.config.DashScopeConfig;
+import com.zjxu.educationapp.common.config.DoubaoConfig;
 import com.zjxu.educationapp.common.constant.ErrorCode;
+import com.zjxu.educationapp.common.utils.AliOSSUtil;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.HomeworkSubmissionDTO;
 import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
@@ -25,19 +26,18 @@ import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.TeachHomeworkService;
 import com.zjxu.educationapp.modules.vo.*;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
 * @author huawei
@@ -62,18 +62,16 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     private UserMapper userMapper;
     @Autowired
     private DashScopeConfig dashScopeConfig;
-    @Value("${education.alioss.access-key-id}")
-    private String accessKeyId;
-    @Value("${education.alioss.access-key-secret}")
-    private String accessKeySecret;
-    @Value("${education.alioss.bucket-name}")
-    private String bucketName;
-    @Value("${education.alioss.endpoint}")
-    private String endpoint;
-    @Value("${dashscope.api-key}")
-    private String dashScopeApiKey;
-    @Value("${education.dashscope.sdk-version:2.21.5}")  // 默认为2.21.5
-    private String dashScopeSdkVersion;
+
+    @Autowired
+    private DoubaoConfig doubaoConfig;
+
+    @Value("${ai.doubao.model-name:doubao-seed-1-6-vision-250815}")
+    private String doubaoModelName;
+
+    @Value("${doubao.base-url:https://ark.cn-beijing.volces.com/api/v3}")
+    private String doubaoBaseUrl;
+
 
     private final String SYSTEMPROMPT = "你是一位专业的教育工作者和作业设计专家。请根据用户提供的要求生成一份结构完整的作业，包含以下信息：\n" +
             "1. 作业标题（homeworkName）\n" +
@@ -468,15 +466,12 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
 
 
     /**
-     * AI 批改作业 (修改版本 - 直接传递图片数据)
+     * 使用豆包大模型视觉识别批改作业（不生成图片）
      */
     @Override
     public Result<?> correctHWByAI(StuHWSubmitDTO stuHWSubmitDTO) {
         Long homeworkId = stuHWSubmitDTO.getHomeworkId();
         Long studentId = stuHWSubmitDTO.getStudentId();
-
-        // OSS相关配置（从注入的属性获取）
-        String ossPrefix = "https://" + bucketName + "." + endpoint + "/";
 
         try {
             // 1. 权限校验与基础数据查询
@@ -504,116 +499,316 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 return Result.error("学生作业记录不存在");
             }
 
-            // 2. 下载作业图片（转换为byte[]）
-            List<byte[]> imageDatas = new ArrayList<>();
-            List<String> imageFormats = new ArrayList<>();
-
-            // 解析学生提交的图片URL列表
+            // 2. 解析学生提交的图片URL列表
             List<String> studentImageUrls = JSON.parseArray(
                     stuHomework.getStudentContent(), String.class
             );
-            if (studentImageUrls != null && !studentImageUrls.isEmpty()) {
-                for (String imgUrl : studentImageUrls) {
-                    if (imgUrl != null && imgUrl.startsWith(ossPrefix)) {
-                        try {
-                            // 提取OSS对象名并下载
-                            String objectName = imgUrl.substring(ossPrefix.length());
-                            byte[] imageData = downloadOssImage(bucketName, endpoint, objectName);
-                            imageDatas.add(imageData);
-                            imageFormats.add(getImageFormat(objectName));
-                        } catch (Exception e) {
-                            log.error("下载图片失败: {}", imgUrl, e);
-                            return Result.error("下载图片失败: " + e.getMessage());
-                        }
-                    }
-                }
-            }
 
-            // 校验图片数据
-            if (imageDatas.isEmpty()) {
+            if (studentImageUrls == null || studentImageUrls.isEmpty()) {
                 return Result.error("未找到有效的作业图片");
             }
 
-            // 3. 调用AI批改服务
-            // 3.1 构建提示词
-            String systemPrompt = "你是专业教师，负责批改作业。请分析图片内容，返回：\n" +
-                    "1. 评分(score，0-100分)\n" +
-                    "2. 评语(comment，含优点、不足和建议)\n" +
-                    "严格按JSON格式输出，不包含其他内容：\n" +
-                    "{\"score\":90,\"comment\":\"评语内容\"}";
+            // 3. 简化系统提示词
+            String systemPrompt = "你是一位专业的教育工作者和作业批改专家。请根据以下要求对学生作业进行批改：\n" +
+                    "1. 分析学生作业图片内容\n" +
+                    "2. 根据作业要求判断答案是否正确\n" +
+                    "3. 给出评分(0-100分)\n" +
+                    "4. 提供详细的评语，包括优点、不足和改进建议\n" +
+                    "请严格按照以下JSON格式返回结果，不要包含其他内容：\n" +
+                    "{\n" +
+                    "  \"score\": 90,\n" +
+                    "  \"comment\": \"详细的评语内容\",\n" +
+                    "  \"correctedImageUrl\": null\n" +
+                    "}";
 
             StringBuilder userPrompt = new StringBuilder();
             userPrompt.append("作业要求：").append(
-                    Optional.ofNullable(teachHomework.getHomeworkContent()).orElse("无")
-            ).append("\n请基于上述要求批改提交的作业图片。");
+                    Optional.ofNullable(teachHomework.getHomeworkContent()).orElse("无具体要求")
+            ).append("\n请根据以上作业要求批改学生提交的作业图片。");
 
-            // 3.2 调用AI服务（根据SDK版本自动适配）
-            AIHomeworkCorrector corrector = new AIHomeworkCorrector(
-                    dashScopeApiKey, dashScopeSdkVersion
-            );
-            AIHomeworkCorrector.CorrectionResult correctionResult = corrector.correctHomework(
-                    systemPrompt, userPrompt.toString(), imageDatas, imageFormats
-            );
+            // 4. 调用豆包大模型服务
+            DoubaoHomeworkCorrectionResult correctionResult = callDoubaoModel(systemPrompt, userPrompt.toString(), studentImageUrls);
 
-            // 4. 更新作业状态与结果
+            // 5. 更新作业状态与结果
             stuHomework.setCompleteAndCorrect(3); // 标记为已批改
             stuHomework.setScore(correctionResult.getScore());
             stuHomework.setTeacherComment(correctionResult.getComment());
             stuHomework.setCorrectTime(now);
-            stuHomeworkMapper.updateById(stuHomework);
+            stuHomeworkMapper.updateALL(stuHomework);
 
-            // 5. 构建返回结果
-            CorrectVO resultVO = new CorrectVO();
-            resultVO.setHomeworkId(homeworkId);
-            resultVO.setStudentId(studentId);
+            // 6. 构建返回结果（不处理图片）
+            CorrectionResultWithImageUrl resultVO = new CorrectionResultWithImageUrl();
             resultVO.setScore(correctionResult.getScore());
             resultVO.setTeacherComment(correctionResult.getComment());
-
             return Result.ok(resultVO);
 
-        } catch (ApiException e) {
-            log.error("AI接口调用失败 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
-            return Result.error("AI批改失败: " + e.getMessage());
         } catch (Exception e) {
-            log.error("作业批改流程异常 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
+            log.error("豆包大模型作业批改流程异常 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
             return Result.error("系统异常: " + e.getMessage());
         }
     }
 
-    /**
-     * 从OSS下载图片数据
-     */
-    private byte[] downloadOssImage(String bucketName, String endpoint, String objectName) throws Exception {
-        // 确保endpoint不包含http/https前缀
-        String cleanEndpoint = endpoint.replaceAll("^https?://", "");
 
-        // 创建OSS客户端
-        com.aliyun.oss.OSS ossClient = new com.aliyun.oss.OSSClientBuilder()
-                .build(cleanEndpoint, accessKeyId, accessKeySecret);
+    /**
+     * 调用豆包大模型进行作业批改
+     */
+    private DoubaoHomeworkCorrectionResult callDoubaoModel(String systemPrompt, String userPrompt, List<String> imageUrls) throws Exception {
+        // 初始化豆包服务
+        ConnectionPool connectionPool = new ConnectionPool(5, 1, TimeUnit.SECONDS);
+        Dispatcher dispatcher = new Dispatcher();
+        ArkService service = ArkService.builder()
+                .dispatcher(dispatcher)
+                .connectionPool(connectionPool)
+                .baseUrl(doubaoBaseUrl)
+                .apiKey(doubaoConfig.getApiKey())
+                .build();
 
         try {
-            // 下载图片数据
-            com.aliyun.oss.model.OSSObject ossObject = ossClient.getObject(bucketName, objectName);
-            return IOUtils.toByteArray(ossObject.getObjectContent());
+            final List<ChatMessage> messages = new ArrayList<>();
+
+            // 添加系统提示
+            final ChatMessage systemMessage = ChatMessage.builder()
+                    .role(ChatMessageRole.SYSTEM)
+                    .content(systemPrompt)
+                    .build();
+            messages.add(systemMessage);
+
+            // 构造多模态消息内容
+            final List<ChatCompletionContentPart> multiParts = new ArrayList<>();
+
+            // 添加图片内容
+            for (String imageUrl : imageUrls) {
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    multiParts.add(ChatCompletionContentPart.builder()
+                            .type("image_url")
+                            .imageUrl(new ChatCompletionContentPart.ChatCompletionContentPartImageURL(imageUrl))
+                            .build());
+                }
+            }
+
+            // 添加文本提示
+            multiParts.add(ChatCompletionContentPart.builder()
+                    .type("text")
+                    .text(userPrompt)
+                    .build());
+
+            final ChatMessage userMessage = ChatMessage.builder()
+                    .role(ChatMessageRole.USER)
+                    .multiContent(multiParts)
+                    .build();
+            messages.add(userMessage);
+
+            // 构造请求
+            ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
+                    .model(doubaoModelName)
+                    .messages(messages)
+                    .build();
+
+            // 发起请求并获取结果
+            String aiResponse = (String) service.createChatCompletion(chatCompletionRequest)
+                    .getChoices().get(0).getMessage().getContent();
+
+            // 解析AI返回的JSON结果
+            return JSON.parseObject(aiResponse, DoubaoHomeworkCorrectionResult.class);
+
         } finally {
-            ossClient.shutdown();
+            service.shutdownExecutor();
         }
     }
 
+
     /**
-     * 根据文件名获取图片格式
+     * 豆包大模型作业批改结果类
      */
-    private String getImageFormat(String objectName) {
-        if (objectName.toLowerCase().endsWith(".jpg") || objectName.toLowerCase().endsWith(".jpeg")) {
-            return "jpeg";
-        } else if (objectName.toLowerCase().endsWith(".png")) {
-            return "png";
-        } else if (objectName.toLowerCase().endsWith(".gif")) {
-            return "gif";
-        } else {
-            return "jpeg"; // 默认格式
-        }
+    public static class DoubaoHomeworkCorrectionResult {
+        private Double score;
+        private String comment;
+        private String correctedImageUrl;
+
+        // Getters and setters
+        public Double getScore() { return score; }
+        public void setScore(Double score) { this.score = score; }
+
+        public String getComment() { return comment; }
+        public void setComment(String comment) { this.comment = comment; }
+
+        public String getCorrectedImageUrl() { return correctedImageUrl; }
+        public void setCorrectedImageUrl(String correctedImageUrl) { this.correctedImageUrl = correctedImageUrl; }
     }
+
+
+
+//    /**
+//     * AI 批改作业 (修改版本 - 下载图片后传递给AI)
+//     */
+//    @Override
+//    public Result<?> correctHWByAI(StuHWSubmitDTO stuHWSubmitDTO) {
+//        Long homeworkId = stuHWSubmitDTO.getHomeworkId();
+//        Long studentId = stuHWSubmitDTO.getStudentId();
+//
+//        try {
+//            // 1. 权限校验与基础数据查询
+//            long teacherId = StpUtil.getLoginIdAsLong();
+//            Date now = new Date();
+//
+//            // 查询作业信息
+//            TeachHomework teachHomework = teachHomeworkMapper.selectOne(
+//                    new LambdaQueryWrapper<TeachHomework>()
+//                            .eq(TeachHomework::getHomeworkId, homeworkId)
+//                            .eq(TeachHomework::getUserId, teacherId)
+//            );
+//            if (teachHomework == null) {
+//                return Result.error("作业不存在或无权限批改");
+//            }
+//
+//            // 查询学生提交记录
+//            StuHomework stuHomework = stuHomeworkMapper.selectOne(
+//                    new LambdaQueryWrapper<StuHomework>()
+//                            .eq(StuHomework::getHomeworkId, homeworkId)
+//                            .eq(StuHomework::getUserId, studentId)
+//                            .eq(StuHomework::getLogicalDeletion, 1)
+//            );
+//            if (stuHomework == null) {
+//                return Result.error("学生作业记录不存在");
+//            }
+//
+//            // 2. 下载作业图片（转换为byte[]）
+//            List<byte[]> imageDatas = new ArrayList<>();
+//            List<String> imageFormats = new ArrayList<>();
+//
+//            // 解析学生提交的图片URL列表
+//            List<String> studentImageUrls = JSON.parseArray(
+//                    stuHomework.getStudentContent(), String.class
+//            );
+//
+//            if (studentImageUrls != null && !studentImageUrls.isEmpty()) {
+//                for (String imgUrl : studentImageUrls) {
+//                    if (imgUrl != null && !imgUrl.trim().isEmpty()) {
+//                        try {
+//                            // 下载图片数据
+//                            byte[] imageData = downloadImageFromUrl(imgUrl);
+//                            imageDatas.add(imageData);
+//                            imageFormats.add(getImageFormatFromUrl(imgUrl));
+//                        } catch (Exception e) {
+//                            log.error("下载图片失败: {}", imgUrl, e);
+//                            return Result.error("下载图片失败: " + e.getMessage());
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // 校验是否有有效的图片数据
+//            if (imageDatas.isEmpty()) {
+//                return Result.error("未找到有效的作业图片");
+//            }
+//
+//            // 3. 调用AI批改服务
+//            // 3.1 构建提示词
+//            String systemPrompt = "你是专业教师，负责批改作业。请分析图片内容，返回：\n" +
+//                    "1. 评分(score，0-100分)\n" +
+//                    "2. 评语(comment，含优点、不足和建议)\n" +
+//                    "3. 批改后图片URL(correctedImageUrl，如果有)\n" +
+//                    "严格按JSON格式输出，不包含其他内容：\n" +
+//                    "{\"score\":90,\"comment\":\"评语内容\",\"correctedImageUrl\":\"图片URL\"}";
+//
+//            StringBuilder userPrompt = new StringBuilder();
+//            userPrompt.append("作业要求：").append(
+//                    Optional.ofNullable(teachHomework.getHomeworkContent()).orElse("无")
+//            ).append("\n请基于上述要求批改提交的作业图片，并返回批改后的图片。");
+//
+//            // 3.2 调用AI服务
+//            AIHomeworkCorrector corrector = new AIHomeworkCorrector(
+//                    dashScopeApiKey, dashScopeSdkVersion
+//            );
+//
+//            AIHomeworkCorrector.CorrectionResultWithImageUrl correctionResult =
+//                    (AIHomeworkCorrector.CorrectionResultWithImageUrl) corrector.correctHomeworkAndReturnImageUrl(
+//                            systemPrompt, userPrompt.toString(), studentImageUrls
+//                    );
+//
+//            // 4. 更新作业状态与结果
+//            stuHomework.setCompleteAndCorrect(3); // 标记为已批改
+//            stuHomework.setScore(correctionResult.getScore());
+//            stuHomework.setTeacherComment(correctionResult.getComment());
+//            stuHomework.setCorrectTime(now);
+//            stuHomeworkMapper.updateById(stuHomework);
+//
+//            // 5. 构建返回结果
+//            CorrectionResultWithImageUrl resultVO = new CorrectionResultWithImageUrl();
+//            resultVO.setScore((double) correctionResult.getScore());
+//            resultVO.setTeacherComment(correctionResult.getComment());
+//            resultVO.setCorrectedImageUrl(correctionResult.getCorrectedImageUrl());
+//
+//            return Result.ok(resultVO);
+//
+//        } catch (ApiException e) {
+//            log.error("AI接口调用失败 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
+//            return Result.error("AI批改失败: " + e.getMessage());
+//        } catch (Exception e) {
+//            log.error("作业批改流程异常 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
+//            return Result.error("系统异常: " + e.getMessage());
+//        }
+//    }
+//
+//    /**
+//     * 从URL下载图片数据
+//     */
+//    private byte[] downloadImageFromUrl(String imageUrl) throws Exception {
+//        java.net.URL url = new java.net.URL(imageUrl);
+//        try (java.io.InputStream inputStream = url.openStream()) {
+//            return org.apache.commons.io.IOUtils.toByteArray(inputStream);
+//        }
+//    }
+//
+//    /**
+//     * 根据URL获取图片格式
+//     */
+//    private String getImageFormatFromUrl(String imageUrl) {
+//        if (imageUrl.toLowerCase().endsWith(".jpg") || imageUrl.toLowerCase().endsWith(".jpeg")) {
+//            return "jpeg";
+//        } else if (imageUrl.toLowerCase().endsWith(".png")) {
+//            return "png";
+//        } else if (imageUrl.toLowerCase().endsWith(".gif")) {
+//            return "gif";
+//        } else {
+//            // 尝试从Content-Type获取格式
+//            try {
+//                java.net.URL url = new java.net.URL(imageUrl);
+//                String contentType = url.openConnection().getContentType();
+//                if (contentType != null) {
+//                    if (contentType.contains("jpeg") || contentType.contains("jpg")) {
+//                        return "jpeg";
+//                    } else if (contentType.contains("png")) {
+//                        return "png";
+//                    } else if (contentType.contains("gif")) {
+//                        return "gif";
+//                    }
+//                }
+//            } catch (Exception e) {
+//                log.warn("获取图片格式失败: {}", imageUrl, e);
+//            }
+//            return "jpeg"; // 默认格式
+//        }
+//    }
+//
+//
+//    // 在类内部添加这个类定义，放在其他类定义之后
+//    public static class CorrectionResultWithImageUrl {
+//        private Double score;
+//        private String teacherComment;
+//        private String correctedImageUrl;
+//
+//        // Getters and setters
+//        public Double getScore() { return score; }
+//        public void setScore(Double score) { this.score = score; }
+//
+//        public String getTeacherComment() { return teacherComment; }
+//        public void setTeacherComment(String teacherComment) { this.teacherComment = teacherComment; }
+//
+//        public String getCorrectedImageUrl() { return correctedImageUrl; }
+//        public void setCorrectedImageUrl(String correctedImageUrl) { this.correctedImageUrl = correctedImageUrl; }
+//    }
+
 
 }
 

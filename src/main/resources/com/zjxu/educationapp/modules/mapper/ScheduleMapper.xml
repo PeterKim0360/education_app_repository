@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjxu.educationapp.modules.mapper.ScheduleMapper">
+
+    <resultMap id="BaseResultMap" type="com.zjxu.educationapp.modules.entity.Schedule">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="week" column="week" />
+            <result property="weekday" column="weekday" />
+            <result property="currentTime" column="current_time" />
+            <result property="courseName" column="course_name" />
+            <result property="courseTime" column="course_time" />
+            <result property="location" column="location" />
+            <result property="isCurrent" column="is_current" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+            <result property="semesterId" column="semester_id" />
+        <result property="courseId" column="course_id"/>
+        <result property="teacherId" column="teacher_id"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,week,weekday,current_time,course_name,
+        course_time,location,is_current,create_time,update_time,
+        semester_id,course_id,teacher_id
+    </sql>
+</mapper>

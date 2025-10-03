@@ -33,6 +33,17 @@ public class TeacherController {
         log.info("获取老师对应的学科");
         return teacherService.getSubjects();
     }
+
+    /**
+     * 自动匹配班级
+     */
+    @Operation(summary = "自动匹配班级",description = "传参：subjectIds")
+    @PostMapping("/match/class")
+    public Result<?> matchClass(@RequestParam("subjectIds") List<Integer> subjectIds) {
+        log.info("自动匹配班级");
+        return teacherService.matchClass(subjectIds);
+    }
+
     /**
      * 获取老师对应学科的上课班级
      */
@@ -90,23 +101,4 @@ public class TeacherController {
         return teacherService.addStus(stuIds,classId);
     }
 
-    /**
-     * 开始上课
-     */
-    @Operation(summary = "开始上课",description = "传参：subjectId")
-    @PostMapping("/start/class")
-    public Result<?> startClass(@RequestParam("subjectId") Integer subjectId) {
-        log.info("开始上课");
-        return teacherService.startClass(subjectId);
-    }
-
-    /**
-     * 结束上课
-     */
-    @Operation(summary = "结束上课",description = "传参：subjectId")
-    @PostMapping("/end/class")
-    public Result<?> endClass(@RequestParam("subjectId") Integer subjectId) {
-        log.info("结束上课");
-        return teacherService.endClass(subjectId);
-    }
 }

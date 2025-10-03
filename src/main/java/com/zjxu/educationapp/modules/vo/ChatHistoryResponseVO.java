@@ -7,58 +7,27 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * 聊天历史查询响应VO
- */
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class ChatHistoryResponseVO {
-
-    /**
-     * 聊天记录列表
-     */
     private List<UserChatMessageVO> messages;
-
-    /**
-     * 当前页码
-     */
     private Integer pageNum;
-
-    /**
-     * 每页大小
-     */
     private Integer pageSize;
-
-    /**
-     * 总记录数
-     */
     private Long total;
-
-    /**
-     * 总页数
-     */
     private Integer totalPages;
-
-    /**
-     * 是否还有更多数据
-     */
     private Boolean hasMore;
-
-    /**
-     * 对方用户信息
-     */
     private UserInfoVO otherUser;
-
+    
     @Data
     @Builder
-    @AllArgsConstructor
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class UserInfoVO {
         private Long userId;
         private String userName;
         private String avatarUrl;
-        private Integer identity; // 0-学生，1-老师
+        private Integer identity;
     }
-} 
+}
