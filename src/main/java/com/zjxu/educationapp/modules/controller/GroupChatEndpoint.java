@@ -134,7 +134,6 @@ public class GroupChatEndpoint {
         if (Objects.equals(userId, team.getCreatedBy())){
             return true;
         }
-        if (team.getCreatedBy() != null && team.getCreatedBy().equals(userId)) { return true; }
         Long count = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
                 .eq(GroupTeamMember::getTeamId, teamId)
                 .eq(GroupTeamMember::getUserId, userId)

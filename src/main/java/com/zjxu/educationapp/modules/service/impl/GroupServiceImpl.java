@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 @Slf4j
@@ -35,6 +36,8 @@ public class GroupServiceImpl implements GroupService {
     private SubjectsMapper subjectsMapper;
     @Autowired
     private UserMapper userMapper;
+
+    private final Map<Long,Object> lockMap=new ConcurrentHashMap<>();
 
     /**
      * 生成小组
@@ -355,70 +358,73 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public Result<?> joinFree(JoinStuDTO joinStuDTO) {
         Long teamId = joinStuDTO.getTeamId();
-        Boolean isLeader = joinStuDTO.getStudent().getIsLeader();
-        if (teamId==null){
-            log.error("小组ID不能为空");
-            return Result.error("小组ID不能为空");
-        }
-        GroupTeam groupTeam = groupTeamMapper.selectById(teamId);
-        if (groupTeam.getLogicalDel()==1){
-            log.error("小组已删除");
-            return Result.error("小组不存在");
-        }
-        if (groupTeam.getStatus()==1){
-            log.error("小组已锁定");
-            return Result.error("小组已锁定");
-        }
-        Integer currentNum = groupTeam.getCurrentNum();
-        if (currentNum>=groupTeam.getCapacity()){
-            log.error("小组已满");
-            return Result.error("小组已满");
-        }
-        Integer memberIndex = joinStuDTO.getStudent().getMemberIndex();
-        //判断该位置是否有人了
-        Long count1 = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
-                .eq(GroupTeamMember::getTeamId, teamId)
-                .eq(GroupTeamMember::getMemberIndex, memberIndex)
-                .eq(GroupTeamMember::getStatus, 1));
-        if (count1>0){
-            log.error("该位置有人了");
-            return Result.error("该位置有人了");
-        }
-        //将小组人数+1
-        groupTeam.setCurrentNum(currentNum+1);
-        groupTeamMapper.updateById(groupTeam);
-        //获取当前用户id
-        Integer userId = joinStuDTO.getStudent().getId();
-        GroupTeamMember groupTeamMember = new GroupTeamMember();
-        groupTeamMember.setTeamId(teamId);
-        groupTeamMember.setUserId(Long.valueOf(userId));
-        groupTeamMember.setMemberIndex(memberIndex);
-        if (isLeader){
-            groupTeamMember.setRole(1);
-            groupTeam.setLeaderId(Long.valueOf(userId));
+        Object lock = lockMap.computeIfAbsent(teamId, k -> new Object());
+        synchronized (lock){
+            Boolean isLeader = joinStuDTO.getStudent().getIsLeader();
+            if (teamId==null){
+                log.error("小组ID不能为空");
+                return Result.error("小组ID不能为空");
+            }
+            GroupTeam groupTeam = groupTeamMapper.selectById(teamId);
+            if (groupTeam.getLogicalDel()==1){
+                log.error("小组已删除");
+                return Result.error("小组不存在");
+            }
+            if (groupTeam.getStatus()==1){
+                log.error("小组已锁定");
+                return Result.error("小组已锁定");
+            }
+            Integer currentNum = groupTeam.getCurrentNum();
+            if (currentNum>=groupTeam.getCapacity()){
+                log.error("小组已满");
+                return Result.error("小组已满");
+            }
+            Integer memberIndex = joinStuDTO.getStudent().getMemberIndex();
+            //判断该位置是否有人了
+            Long count1 = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
+                    .eq(GroupTeamMember::getTeamId, teamId)
+                    .eq(GroupTeamMember::getMemberIndex, memberIndex)
+                    .eq(GroupTeamMember::getStatus, 1));
+            if (count1>0){
+                log.error("该位置有人了");
+                return Result.error("该位置有人了");
+            }
+            //将小组人数+1
+            groupTeam.setCurrentNum(currentNum+1);
             groupTeamMapper.updateById(groupTeam);
-        }else {
-            groupTeamMember.setRole(2);
-        }
+            //获取当前用户id
+            Integer userId = joinStuDTO.getStudent().getId();
+            GroupTeamMember groupTeamMember = new GroupTeamMember();
+            groupTeamMember.setTeamId(teamId);
+            groupTeamMember.setUserId(Long.valueOf(userId));
+            groupTeamMember.setMemberIndex(memberIndex);
+            if (isLeader){
+                groupTeamMember.setRole(1);
+                groupTeam.setLeaderId(Long.valueOf(userId));
+                groupTeamMapper.updateById(groupTeam);
+            }else {
+                groupTeamMember.setRole(2);
+            }
 //        if (groupTeam.getCurrentNum()==1){
 //            //将当前用户匹配为队长
 //            groupTeamMember.setRole(1);
 //            groupTeam.setLeaderId(userId);
 //            groupTeamMapper.updateById(groupTeam);
 //        }
-        Long count = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
-                .eq(GroupTeamMember::getTeamId, teamId)
-                .eq(GroupTeamMember::getUserId, userId));
-        if (count==0){
-            groupTeamMemberMapper.insert(groupTeamMember);
+            Long count = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
+                    .eq(GroupTeamMember::getTeamId, teamId)
+                    .eq(GroupTeamMember::getUserId, userId));
+            if (count==0){
+                groupTeamMemberMapper.insert(groupTeamMember);
+                return Result.ok();
+            }
+            groupTeamMember.setStatus(1);
+            log.info("修改小组成员信息:{}",groupTeamMember);
+            groupTeamMemberMapper.update(groupTeamMember,new LambdaQueryWrapper<GroupTeamMember>()
+                    .eq(GroupTeamMember::getTeamId, teamId)
+                    .eq(GroupTeamMember::getUserId, userId));
             return Result.ok();
         }
-        groupTeamMember.setStatus(1);
-        log.info("修改小组成员信息:{}",groupTeamMember);
-        groupTeamMemberMapper.update(groupTeamMember,new LambdaQueryWrapper<GroupTeamMember>()
-                .eq(GroupTeamMember::getTeamId, teamId)
-                .eq(GroupTeamMember::getUserId, userId));
-        return Result.ok();
     }
 
 //    /**
