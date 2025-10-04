@@ -1,6 +1,8 @@
 package com.zjxu.educationapp.modules.entity;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 
@@ -9,8 +11,10 @@ import java.util.Date;
  */
 @Data
 public class AIHomeworkResponse {
+    // getter和setter方法
     private String homeworkName;
     private String content;
-    private Integer subjectId;
-    private Date deadTime;
+    // 确保有默认构造函数
+    public AIHomeworkResponse() {}
+
 }

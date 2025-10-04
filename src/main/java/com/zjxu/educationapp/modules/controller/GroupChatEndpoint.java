@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static io.lettuce.core.pubsub.PubSubOutput.Type.message;
+
 @Slf4j
 @Component
 @ServerEndpoint(value = "/group/chat/{teamId}", configurator = WebSocketConfigurator.class)

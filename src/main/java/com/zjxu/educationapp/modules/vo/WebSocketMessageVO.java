@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * WebSocket消息VO
  */
@@ -28,6 +30,11 @@ public class WebSocketMessageVO {
      * 消息ID（发送后返回）
      */
     private Long messageId;
+
+    /**
+     * 批量消息ID（发送后返回）
+     */
+    private List<Long> messageIds;
 
     /**
      * 发送时间戳

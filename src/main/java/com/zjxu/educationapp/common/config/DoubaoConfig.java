@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DoubaoConfig {
-    @Value("${spring.ai.doubao.api-key:}")
+    @Value("${doubao.api-key:}")
     private String apiKey;
 
     public String getApiKey() {

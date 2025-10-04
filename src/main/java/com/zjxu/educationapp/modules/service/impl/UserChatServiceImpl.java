@@ -33,31 +33,31 @@ public class UserChatServiceImpl implements UserChatService {
     public ChatHistoryResponseVO getChatHistory(ChatHistoryRequestVO request) {
         // 获取当前登录用户ID
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        
+
         // 生成会话ID
         String conversationId = generateConversationId(currentUserId, request.getOtherUserId());
-        
+
         // 计算分页参数
         Integer offset = (request.getPageNum() - 1) * request.getPageSize();
-        
+
         // 查询聊天记录
         List<UserChatMessage> messages = userChatMessageMapper.selectByConversationIdWithPaging(
                 conversationId, offset, request.getPageSize());
-        
+
         // 统计总数
         Long total = userChatMessageMapper.countByConversationId(conversationId);
-        
+
         // 获取对方用户信息
         UserEntity otherUser = userMapper.selectById(request.getOtherUserId());
         if (otherUser == null) {
             throw new RuntimeException("对方用户不存在");
         }
-        
+
         // 转换为VO
         List<UserChatMessageVO> messageVOs = messages.stream().map(message -> {
             UserEntity fromUser = userMapper.selectById(message.getFromUserId());
             UserEntity toUser = userMapper.selectById(message.getToUserId());
-            
+
             return UserChatMessageVO.builder()
                     .id(message.getId())
                     .fromUserId(message.getFromUserId())
@@ -73,11 +73,11 @@ public class UserChatServiceImpl implements UserChatService {
                     .isSentByCurrentUser(message.getFromUserId().equals(currentUserId))
                     .build();
         }).collect(Collectors.toList());
-        
+
         // 计算分页信息
         Integer totalPages = (int) Math.ceil((double) total / request.getPageSize());
         Boolean hasMore = request.getPageNum() < totalPages;
-        
+
         return ChatHistoryResponseVO.builder()
                 .messages(messageVOs)
                 .pageNum(request.getPageNum())
@@ -105,7 +105,7 @@ public class UserChatServiceImpl implements UserChatService {
     public Long saveMessage(Long fromUserId, SendMessageRequestVO request) {
         // 生成会话ID
         String conversationId = generateConversationId(fromUserId, request.getToUserId());
-        
+
         // 构建消息对象
         UserChatMessage message = UserChatMessage.builder()
                 .fromUserId(fromUserId)
@@ -116,10 +116,10 @@ public class UserChatServiceImpl implements UserChatService {
                 .sendTime(new Date())
                 .conversationId(conversationId)
                 .build();
-        
+
         // 保存到数据库
         userChatMessageMapper.insert(message);
-        
+
         return message.getId();
     }
 
@@ -137,4 +137,4 @@ public class UserChatServiceImpl implements UserChatService {
             return userId2 + ":" + userId1;
         }
     }
-} 
+}
