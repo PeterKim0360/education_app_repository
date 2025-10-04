@@ -12,8 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -137,4 +136,49 @@ public class UserChatServiceImpl implements UserChatService {
             return userId2 + ":" + userId1;
         }
     }
-}
+
+    @Override
+    public List<Long> getChatFriendsId() {
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        List<UserChatMessage> asToList = userChatMessageMapper.selectChatFriendsIdAsTo(currentUserId);
+        List<UserChatMessage> asFromList = userChatMessageMapper.selectChatFriendsIdAsFrom(currentUserId);
+        //混起来之前有个问题，就是说不能确定当前要的是to还是from
+        asToList.sort((o1, o2) -> {
+            return (int) (o2.getSendTime().getTime() - o1.getSendTime().getTime());
+        });
+        //若o2>o1,那么o2在前，o1在后，降序排序
+        asFromList.sort((o1, o2) -> {
+            return (int) (o2.getSendTime().getTime() - o1.getSendTime().getTime());
+        });
+        List<Long> res = new ArrayList<>();
+        int i1 = 0, i2 = 0;
+        while (i1 < asToList.size() && i2 < asFromList.size()) {
+            long toInstant = asToList.get(i1).getSendTime().getTime();
+            long fromInstant = asFromList.get(i2).getSendTime().getTime();
+            if (toInstant > fromInstant) {
+                res.add(asToList.get(i1).getFromUserId());
+                i1++;
+            } else {
+                res.add(asFromList.get(i2).getToUserId());
+                i2++;
+            }
+        }
+        while (i1 < asToList.size()) {
+            res.add(asToList.get(i1).getFromUserId());
+            i1++;
+        }
+        while (i2 < asFromList.size()) {
+            res.add(asFromList.get(i2).getToUserId());
+            i2++;
+        }
+        HashSet<Long> distinctSet = new HashSet<>();
+        List<Long> res2 = new ArrayList<>();
+        for (Long item : res) {
+            if(!distinctSet.contains(item)){
+                res2.add(item);
+                distinctSet.add(item);
+            }
+        }
+        return res2;
+    }
+} 

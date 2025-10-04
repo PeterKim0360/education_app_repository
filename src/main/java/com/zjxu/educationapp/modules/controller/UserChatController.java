@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 用户聊天相关接口
  */
@@ -104,5 +107,12 @@ public class UserChatController {
             log.error("标记消息已读失败", e);
             return Result.error("标记消息已读失败：" + e.getMessage());
         }
+    }
+
+    @Operation(summary = "获取聊天好友ID列表", description = "根据消息发送时间降序返回好友用户id")
+    @GetMapping("/friends")
+    public Result<List<Long>> getChatFriendsId(){
+        log.info("获取聊天好友ID列表");
+        return Result.ok(userChatService.getChatFriendsId());
     }
 } 

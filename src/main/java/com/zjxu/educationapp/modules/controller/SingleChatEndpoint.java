@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 import javax.websocket.*;
@@ -29,16 +30,17 @@ import java.util.concurrent.ConcurrentHashMap;
 @ServerEndpoint(value = "/single/chat/{toUserId}", configurator = WebSocketConfigurator.class)
 public class SingleChatEndpoint {
     /*
-    当前类的实例有Tomcat容器创建，因此即使标注了@Component也不被Spring容器管理，因此不能直接使用@Autowired标注在字段上（静态字段不能也不能使用此注解）
+    此处@Component作用：Spring扫描到当前类，然后创建被容器管理的端点对象，通过setter方法对类对象进行赋值，这样即使是不归spring管理的端点对象也可以使用这个静态类对象
+    当前类的实例由Tomcat容器创建，无法对非Spring管理的bean对象进行自动注入
+    这个端点对象不是单例的，每此ws连接对应全新的端点实例
      */
     private static UserService userService;
     private static UserChatService userChatService;
 
     //通过发送人->收件人组合id 映射到对应会话
-    private static ConcurrentHashMap<String, Session> onlineUserSession = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<String, Session> onlineUserSession = new ConcurrentHashMap<>();
 
-//    private Long fromUserId;
-
+    //此处使用成员变量在并发情况下不会出现被其它线程修改问题，因为当前类是多例的
     private String sessionKey;
     private String reverseSessionKey;
     
@@ -57,6 +59,7 @@ public class SingleChatEndpoint {
     @OnOpen
     public void onOpen(@PathParam("toUserId") Long toUserId, Session session) {
         log.info("WebSocket连接建立，toUserId: {}", toUserId);
+//        log.info("当前端点地址：{}",this);
         /*
         建立连接时就确定接收消息人，在线or不在线：在线通过websocket发消息，不在线调用service持久化历史消息；
         一开始进入对话页面需要将历史消息展示出来，能够像微信一样确定是谁发的历史消息
@@ -118,8 +121,13 @@ public class SingleChatEndpoint {
     @OnClose
     public void onClose(@PathParam("toUserId") Long toUserId) {
         //此时自动关闭连接
-        onlineUserSession.remove(sessionKey);
-        log.info("WebSocket连接关闭，sessionKey: {}", sessionKey);
+        // 检查sessionKey是否为null
+        if (sessionKey != null) {
+            onlineUserSession.remove(sessionKey);
+            log.info("WebSocket连接关闭，sessionKey: {}", sessionKey);
+        } else {
+            log.warn("WebSocket连接关闭时sessionKey为null");
+        }
     }
 
     @OnError
@@ -135,7 +143,9 @@ public class SingleChatEndpoint {
     private void sendAuthErrorAndClose(Session session, Object authError) {
         try {
             session.getBasicRemote().sendText(JSONObject.toJSONString(Result.error(ErrorCode.UNKNOWN_LOGIN_ERROR)));
-            session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, authError.toString()));
+            if(session.isOpen()){
+                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, authError.toString()));
+            }
         } catch (IOException e) {
             log.error("websocket发送错误信息失败");
             try {
