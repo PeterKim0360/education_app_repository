@@ -301,7 +301,6 @@ public class GroupServiceImpl implements GroupService {
                 .eq(GroupTeam::getSubjectId, subjectId)
                 .eq(GroupTeam::getCreatedBy, createdBy)
                 .eq(GroupTeam::getLogicalDel, 0));
-        log.info("小组列表:{}",groupTeams);
         List<Long> teamIds = groupTeams.stream().map(GroupTeam::getId).toList();
         List<GroupTeamVO> list = new ArrayList<>();
         for (Long teamId : teamIds) {
@@ -312,12 +311,10 @@ public class GroupServiceImpl implements GroupService {
             groupTeamVO.setCapacity(groupTeam.getCapacity());
             groupTeamVO.setCurrentCount(groupTeam.getCurrentNum());
 
-            log.info("小组ID:{}",teamId);
             List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
                     .eq(GroupTeamMember::getTeamId, teamId)
                     .eq(GroupTeamMember::getStatus, 1)
                     .orderByAsc(GroupTeamMember::getMemberIndex));
-            log.info("小组成员列表:{}",groupTeamMembers);
 //            List<StudentDTO> students = new ArrayList<>(groupTeamMembers.stream().map(groupTeamMember -> {
 //                StudentDTO studentDTO = new StudentDTO();
 //                UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
@@ -343,7 +340,6 @@ public class GroupServiceImpl implements GroupService {
                     GroupTeamMember groupTeamMember = groupTeamMembers.get(num);
                     StudentDTO studentDTO = new StudentDTO();
                     UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
-                    log.info("用户信息:{}",userEntity);
                     studentDTO.setId(Math.toIntExact(userEntity.getId()));
                     studentDTO.setName(userEntity.getUserName());
                     studentDTO.setAvatarUrl(userEntity.getAvatarUrl());
@@ -354,7 +350,6 @@ public class GroupServiceImpl implements GroupService {
                 }
 
             }
-            log.info("小组成员:{}",students);
             groupTeamVO.setStudents(students);
             list.add(groupTeamVO);
         }
