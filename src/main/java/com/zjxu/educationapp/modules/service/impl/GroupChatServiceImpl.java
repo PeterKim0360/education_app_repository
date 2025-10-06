@@ -3,18 +3,23 @@ package com.zjxu.educationapp.modules.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.GroupChatMessageByTeachDTO;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageDTO;
 import com.zjxu.educationapp.modules.entity.GroupChatMessage;
 import com.zjxu.educationapp.modules.mapper.GroupChatMessageMapper;
 import com.zjxu.educationapp.modules.service.GroupChatService;
 import com.zjxu.educationapp.modules.vo.GroupChatHistoryResponseVO;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class GroupChatServiceImpl implements GroupChatService {
 
     @Autowired
@@ -65,6 +70,7 @@ public class GroupChatServiceImpl implements GroupChatService {
      * @return
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long saveMessage(GroupChatMessageDTO groupChatMessageDTO) {
         GroupChatMessage message = GroupChatMessage.builder()
                 .teamId(groupChatMessageDTO.getTeamId())
@@ -75,5 +81,23 @@ public class GroupChatServiceImpl implements GroupChatService {
                 .build();
         groupChatMessageMapper.insert(message);
         return message.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<Long> saveAllMessage(GroupChatMessageByTeachDTO messageByTeachDTO) {
+        List<Long> teamIds = messageByTeachDTO.getTeamIds();
+        log.info("teamIds:{}", teamIds);
+        return teamIds.stream().map(teamId -> {
+            GroupChatMessage message = GroupChatMessage.builder()
+                    .teamId(teamId)
+                    .fromUserId(messageByTeachDTO.getFromUserId())
+                    .content(messageByTeachDTO.getContent())
+                    .messageType(messageByTeachDTO.getMessageType() == null ? 1 : messageByTeachDTO.getMessageType())
+                    .sendTime(new Date())
+                    .build();
+            groupChatMessageMapper.insert(message);
+            return message.getId();
+        }).toList();
     }
 }

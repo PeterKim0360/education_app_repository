@@ -2,7 +2,9 @@ package com.zjxu.educationapp.modules.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zjxu.educationapp.common.utils.Result;
+import com.zjxu.educationapp.modules.dto.GroupChatMessageByTeachDTO;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageDTO;
+import com.zjxu.educationapp.modules.entity.GroupChatMessage;
 import com.zjxu.educationapp.modules.service.GroupChatService;
 import com.zjxu.educationapp.modules.vo.GroupChatHistoryResponseVO;
 import com.zjxu.educationapp.modules.vo.WebSocketMessageVO;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * 小组讨论区
@@ -77,14 +80,23 @@ public class GroupChatController {
      */
     @PostMapping("/broadcast")
     @Operation(summary = "老师统一广播给每个小组")
-    public Result<Void> broadcast(@RequestBody WebSocketMessageVO message) {
+    public Result<List<Long>> broadcast(@RequestBody GroupChatMessageByTeachDTO messageByTeachDTO) {
         log.info("老师统一广播给每个小组");
+        List<Long> messageIds=groupChatService.saveAllMessage(messageByTeachDTO);
+        log.info("messageIds:{}", messageIds);
+        WebSocketMessageVO message = WebSocketMessageVO.builder()
+                .content(messageByTeachDTO.getContent())
+                .messageIds(messageIds)
+                .messageType(messageByTeachDTO.getMessageType())
+                .timestamp(System.currentTimeMillis())
+                .status("success")
+                .build();
         try {
             GroupChatEndpoint.broadcastToAllGroups(JSONObject.toJSONString(message));
         } catch (IOException e) {
             log.error("发送消息失败", e);
         }
-        return Result.ok();
+        return Result.ok(messageIds);
     }
 
 

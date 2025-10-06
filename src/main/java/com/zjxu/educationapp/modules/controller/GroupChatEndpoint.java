@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static io.lettuce.core.pubsub.PubSubOutput.Type.message;
+
 @Slf4j
 @Component
 @ServerEndpoint(value = "/group/chat/{teamId}", configurator = WebSocketConfigurator.class)
@@ -132,7 +134,6 @@ public class GroupChatEndpoint {
         if (Objects.equals(userId, team.getCreatedBy())){
             return true;
         }
-        if (team.getCreatedBy() != null && team.getCreatedBy().equals(userId)) { return true; }
         Long count = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
                 .eq(GroupTeamMember::getTeamId, teamId)
                 .eq(GroupTeamMember::getUserId, userId)

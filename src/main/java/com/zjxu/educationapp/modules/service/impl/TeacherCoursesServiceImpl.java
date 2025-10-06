@@ -38,6 +38,8 @@ public class TeacherCoursesServiceImpl implements TeacherCoursesService {
     private StudentClassMapper studentClassMapper;
     @Autowired
     private HomeworkInClassStuMapper homeworkInClassStuMapper;
+    @Autowired
+    private GroupTeamMapper groupTeamMapper;
 
     /**
      * 上传课件
@@ -102,6 +104,17 @@ public class TeacherCoursesServiceImpl implements TeacherCoursesService {
     @Override
     public Result<?> endClass(Integer subjectId) {
         long teacherId = StpUtil.getLoginIdAsLong();
+        //如果有进行小组分组的话，需要将小组删除
+        List<GroupTeam> groupTeams = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
+                .eq(GroupTeam::getSubjectId, subjectId)
+                .eq(GroupTeam::getCreatedBy, teacherId)
+                .eq(GroupTeam::getLogicalDel, 0));
+        if (CollectionUtils.isNotEmpty(groupTeams)){
+            for (GroupTeam groupTeam : groupTeams) {
+                groupTeam.setLogicalDel(1);
+                groupTeamMapper.updateById(groupTeam);
+            }
+        }
         List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
                 .eq(SubjectClassTeach::getSubjectId, subjectId)
                 .eq(SubjectClassTeach::getTeachId, teacherId)

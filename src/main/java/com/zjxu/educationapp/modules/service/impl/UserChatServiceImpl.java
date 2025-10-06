@@ -53,7 +53,9 @@ public class UserChatServiceImpl implements UserChatService {
         }
 
         // 转换为VO
-        List<UserChatMessageVO> messageVOs = messages.stream().map(message -> {
+        List<UserChatMessageVO> messageVOs = messages.stream()
+                .filter(message -> message.getMessageType() != 0)
+                .map(message -> {
             UserEntity fromUser = userMapper.selectById(message.getFromUserId());
             UserEntity toUser = userMapper.selectById(message.getToUserId());
 
@@ -142,7 +144,6 @@ public class UserChatServiceImpl implements UserChatService {
         Long currentUserId = StpUtil.getLoginIdAsLong();
         List<UserChatMessage> asToList = userChatMessageMapper.selectChatFriendsIdAsTo(currentUserId);
         List<UserChatMessage> asFromList = userChatMessageMapper.selectChatFriendsIdAsFrom(currentUserId);
-        //混起来之前有个问题，就是说不能确定当前要的是to还是from
         asToList.sort((o1, o2) -> {
             return (int) (o2.getSendTime().getTime() - o1.getSendTime().getTime());
         });
@@ -174,11 +175,26 @@ public class UserChatServiceImpl implements UserChatService {
         HashSet<Long> distinctSet = new HashSet<>();
         List<Long> res2 = new ArrayList<>();
         for (Long item : res) {
-            if(!distinctSet.contains(item)){
+            if (!distinctSet.contains(item)) {
                 res2.add(item);
                 distinctSet.add(item);
             }
         }
         return res2;
+    }
+
+    @Override
+    public String addFriend(Long friendId) {
+        long curUserId = StpUtil.getLoginIdAsLong();
+        userChatMessageMapper.insert(UserChatMessage.builder()
+                .fromUserId(curUserId)
+                .toUserId(friendId)
+                .content("")
+                .messageType(0)
+                .status(1)
+                .sendTime(new Date())
+                .conversationId(generateConversationId(curUserId, friendId))
+                .build());
+        return "添加成功";
     }
 } 

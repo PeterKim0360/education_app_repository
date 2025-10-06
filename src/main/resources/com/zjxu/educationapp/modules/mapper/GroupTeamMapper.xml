@@ -16,10 +16,11 @@
             <result property="createdTime" column="created_time" />
             <result property="updatedTime" column="updated_time" />
             <result property="currentNum" column="current_num" />
+        <result property="logicalDel" column="logical_del"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,work_id,subject_id,name,capacity,leader_id,
-        status,created_by,created_time,updated_time,current_num
+        status,created_by,created_time,updated_time,current_num,logical_del
     </sql>
 </mapper>
