@@ -2,7 +2,7 @@
 #nohup java -jar education-app-0.0.1-SNAPSHOT.jar &> education-app.log &
 spring:
   profiles:
-    active: prod
+    active: dev
   application:
     name: education-app
   jackson:
