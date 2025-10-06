@@ -357,10 +357,10 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
      * @param questionCount
      * @return
      */
-    private List<ErrorQuestionsVO> initPractice(Long studentId, Integer subjectId, int questionCount) {
+    private List<ErrorQuestionsVO> initPractice(Long studentId, Integer subjectId, int questionCount,Integer  questionType) {
         try {
             // 获取随机错题
-            List<Integer> questions = getRandomErrorQuestions(studentId, subjectId, questionCount);
+            List<Integer> questions = getRandomErrorQuestions(studentId, subjectId, questionCount,questionType);
             if (questions.isEmpty()) {
                 return List.of();
             }
@@ -488,7 +488,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
      * 查找该学生该学科未完成的会话（如有则返回状态，否则新建）
      */
     @Override
-    public Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount) {
+    public Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount, Integer questionType) {
         try {
             PracticeSession existing = practiceSessionMapper.selectOne(
                     new QueryWrapper<PracticeSession>()
@@ -501,7 +501,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             if (existing != null) {
                 return getPracticeState(existing.getId());
             }
-            List<ErrorQuestionsVO> init = initPractice(studentId, subjectId, questionCount);
+            List<ErrorQuestionsVO> init = initPractice(studentId, subjectId, questionCount, questionType);
             if (init == null) {
                 return Result.error("初始化失败");
             }
@@ -610,18 +610,51 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
 
     /**
      * 获取指定数量的随机错题
+     *
      * @param studentId
      * @param subjectId
      * @param questionCount
+     * @param questionType
      * @return
      */
-    private List<Integer> getRandomErrorQuestions(Long studentId, Integer subjectId, int questionCount) {
-        List<ErrorQuestions> errorQuestions = errorQuestionsMapper.selectList(new LambdaQueryWrapper<ErrorQuestions>()
-                .eq(ErrorQuestions::getUserId, studentId)
-                .eq(ErrorQuestions::getSubjectId, subjectId)
-                .eq(ErrorQuestions::getIsMastered, false)
-                .last("ORDER BY RAND() LIMIT " + questionCount));
-        return errorQuestions.stream().map(ErrorQuestions::getQuestionId).toList();
+    private List<Integer> getRandomErrorQuestions(Long studentId, Integer subjectId, int questionCount, Integer questionType) {
+        switch (questionType){
+            case 1:
+                List<ErrorQuestions> errorQuestions = errorQuestionsMapper.selectList(new LambdaQueryWrapper<ErrorQuestions>()
+                        .eq(ErrorQuestions::getUserId, studentId)
+                        .eq(ErrorQuestions::getSubjectId, subjectId)
+                        .eq(ErrorQuestions::getIsMastered, false)
+                        .last("ORDER BY RAND() LIMIT " + questionCount));
+                return errorQuestions.stream().map(ErrorQuestions::getQuestionId).toList();
+            case 2:
+                List<SingleChoice> singleQuestions = singleChoiceMapper.selectList(new LambdaQueryWrapper<SingleChoice>()
+                        .eq(SingleChoice::getUserId, studentId)
+                        .eq(SingleChoice::getSubjectId, subjectId)
+                        .last("ORDER BY RAND() LIMIT " + questionCount));
+                return singleQuestions.stream().map(SingleChoice::getQuestionId).toList();
+            case 3:
+                List<MultipleChoice> multipleQuestions = multipleChoiceMapper.selectList(new LambdaQueryWrapper<MultipleChoice>()
+                        .eq(MultipleChoice::getUserId, studentId)
+                        .eq(MultipleChoice::getSubjectId, subjectId)
+                        .last("ORDER BY RAND() LIMIT " + questionCount));
+                return multipleQuestions.stream().map(MultipleChoice::getQuestionId).toList();
+            case 4:
+                List<TrueFalse> trueFalseQuestions = trueFalseMapper.selectList(new LambdaQueryWrapper<TrueFalse>()
+                        .eq(TrueFalse::getUserId, studentId)
+                        .eq(TrueFalse::getSubjectId, subjectId)
+                        .last("ORDER BY RAND() LIMIT " + questionCount));
+                return trueFalseQuestions.stream().map(TrueFalse::getQuestionId).toList();
+            case 5:
+                List<FillInBlank> fillInBlankQuestions = fillInBlankMapper.selectList(new LambdaQueryWrapper<FillInBlank>()
+                        .eq(FillInBlank::getUserId, studentId)
+                        .eq(FillInBlank::getSubjectId, subjectId)
+                        .last("ORDER BY RAND() LIMIT " + questionCount));
+                return fillInBlankQuestions.stream().map(FillInBlank::getQuestionId).toList();
+            default:
+                log.error("Invalid question type: {}", questionType);
+                return List.of();
+        }
+
     }
 
     /**
@@ -639,6 +672,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
         vo.setCorrectResult(StrUtil.blankToDefault(vo.getCorrectResult(), ""));
         vo.setTrueFalseUserAnswer(StrUtil.blankToDefault(vo.getTrueFalseUserAnswer(), ""));
     }
+
     /**
      * 解析选项字符串，按选项间的逗号分割，而不是题目内容中的逗号
      * @param options 选项字符串，格式如 "A. 选项1,B. 选项2,C. 选项3,D. 选项4"

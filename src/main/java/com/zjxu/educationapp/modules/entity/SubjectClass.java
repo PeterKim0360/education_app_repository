@@ -34,8 +34,4 @@ public class SubjectClass {
      */
     private Integer status;
 
-    /**
-     * 学生数量
-     */
-    private Integer studentCount;
 }

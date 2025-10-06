@@ -8,8 +8,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.*;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 /**
 * @author huawei
 * @description 针对表【error_questions】的数据库操作Service
@@ -88,12 +86,14 @@ public interface ErrorQuestionsService extends IService<ErrorQuestions> {
 
     /**
      * 查找该学生该学科未完成的会话（如有则返回状态，否则新建）
+     *
      * @param studentId
      * @param subjectId
      * @param questionCount 当不存在会话时用于初始化的数量
+     * @param questionType
      * @return
      */
-    Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount);
+    Result<PracticeStateVO> resumeOrStart(Long studentId, Integer subjectId, int questionCount, Integer questionType);
 //
 //    /**
 //     * 批量获取题目详情
