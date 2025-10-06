@@ -98,7 +98,6 @@ public class GroupChatServiceImpl implements GroupChatService {
     @Transactional(rollbackFor = Exception.class)
     public List<Long> saveAllMessage(GroupChatMessageByTeachDTO messageByTeachDTO) {
         List<Long> teamIds = messageByTeachDTO.getTeamIds();
-        log.info("teamIds:{}", teamIds);
         return teamIds.stream().map(teamId -> {
             GroupChatMessage message = GroupChatMessage.builder()
                     .teamId(teamId)
