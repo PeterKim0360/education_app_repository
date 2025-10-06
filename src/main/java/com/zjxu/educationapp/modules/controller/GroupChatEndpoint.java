@@ -79,7 +79,6 @@ public class GroupChatEndpoint {
 
         ROOM_SESSIONS.computeIfAbsent(teamId, k -> new ConcurrentHashMap<>())
                 .put(session.getId(), session);
-        log.info("Group WS connected: teamId={}, userId={}, sessionId={}", teamId, currentUserId, session.getId());
     }
 
     @OnMessage
@@ -102,7 +101,6 @@ public class GroupChatEndpoint {
                     .build();
             broadcastToRoom(teamId, JSONObject.toJSONString(response));
         } catch (Exception e) {
-            log.error("Group message handling failed", e);
             sendErrorMessage(session, "发送消息失败: " + e.getMessage());
         }
     }
@@ -116,7 +114,6 @@ public class GroupChatEndpoint {
                 ROOM_SESSIONS.remove(teamId);
             }
         }
-        log.info("Group WS closed: teamId={}, sessionId={}", teamId, session.getId());
     }
 
     @OnError
