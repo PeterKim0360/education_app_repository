@@ -220,9 +220,10 @@ public class QuestionController {
     @Operation(summary = "恢复或开始练习")
     @PostMapping("/practice/resume")
     public Result<PracticeStateVO> resumeOrStart(@RequestParam Integer subjectId,
+                                                 @RequestParam Integer questionType,
                                                  @RequestParam(defaultValue = "10") int questionCount) {
         Long studentId = StpUtil.getLoginIdAsLong();
-        return errorQuestionsService.resumeOrStart(studentId, subjectId, questionCount);
+        return errorQuestionsService.resumeOrStart(studentId, subjectId, questionCount,questionType);
     }
 
 }

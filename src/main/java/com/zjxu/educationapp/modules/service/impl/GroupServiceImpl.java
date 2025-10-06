@@ -298,6 +298,7 @@ public class GroupServiceImpl implements GroupService {
                 .eq(GroupTeam::getCreatedBy, createdBy)
                 .eq(GroupTeam::getStatus, 0)
                 .eq(GroupTeam::getLogicalDel, 0));
+        log.info("小组列表:{}",groupTeams);
         List<Long> teamIds = groupTeams.stream().map(GroupTeam::getId).toList();
         List<GroupTeamVO> list = new ArrayList<>();
         for (Long teamId : teamIds) {
@@ -331,19 +332,22 @@ public class GroupServiceImpl implements GroupService {
                     continue;
                 }
                 if (i!=groupTeamMembers.get(num).getMemberIndex()){
-                    students.add(new StudentDTO());
+                    students.add(null);
+                    continue;
                 }else {
                     GroupTeamMember groupTeamMember = groupTeamMembers.get(num);
                     StudentDTO studentDTO = new StudentDTO();
                     UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
+                    log.info("用户信息:{}",userEntity);
                     studentDTO.setId(Math.toIntExact(userEntity.getId()));
                     studentDTO.setName(userEntity.getUserName());
                     studentDTO.setAvatarUrl(userEntity.getAvatarUrl());
                     studentDTO.setIsLeader(groupTeamMember.getRole() == 1);
                     studentDTO.setMemberIndex(groupTeamMember.getMemberIndex());
                     students.add(studentDTO);
+                    num++;
                 }
-                num++;
+                log.info("小组成员:{}",students);
             }
 
             groupTeamVO.setStudents(students);
@@ -358,6 +362,14 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public Result<?> joinFree(JoinStuDTO joinStuDTO) {
         Long teamId = joinStuDTO.getTeamId();
+        long studentId = StpUtil.getLoginIdAsLong();
+        Long count2 = groupTeamMemberMapper.selectCount(new LambdaQueryWrapper<GroupTeamMember>()
+                .eq(GroupTeamMember::getUserId, studentId)
+                .eq(GroupTeamMember::getStatus, 1));
+        if (count2>0){
+            log.error("学生已加入小组");
+            return Result.error("学生已加入小组");
+        }
         Object lock = lockMap.computeIfAbsent(teamId, k -> new Object());
         synchronized (lock){
             Boolean isLeader = joinStuDTO.getStudent().getIsLeader();
