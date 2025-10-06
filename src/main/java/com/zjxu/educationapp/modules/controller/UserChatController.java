@@ -115,4 +115,11 @@ public class UserChatController {
         log.info("获取聊天好友ID列表");
         return Result.ok(userChatService.getChatFriendsId());
     }
+
+    @Operation(summary = "添加好友到聊天列表中")
+    @PostMapping("/addFriend")
+    public Result<String> addFriend(@RequestParam("friendId") Long friendId){
+        log.info("添加好友到聊天列表中");
+        return Result.ok(userChatService.addFriend(friendId));
+    }
 } 

@@ -51,4 +51,6 @@ public interface UserChatService {
     String generateConversationId(Long userId1, Long userId2);
 
     List<Long> getChatFriendsId();
+
+    String addFriend(Long friendId);
 }
