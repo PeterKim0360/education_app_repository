@@ -5,7 +5,11 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageByTeachDTO;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageDTO;
 import com.zjxu.educationapp.modules.entity.GroupChatMessage;
+import com.zjxu.educationapp.modules.entity.GroupTeam;
+import com.zjxu.educationapp.modules.entity.GroupTeamMember;
 import com.zjxu.educationapp.modules.service.GroupChatService;
+import com.zjxu.educationapp.modules.service.GroupTeamMemberService;
+import com.zjxu.educationapp.modules.service.GroupTeamService;
 import com.zjxu.educationapp.modules.vo.GroupChatHistoryResponseVO;
 import com.zjxu.educationapp.modules.vo.WebSocketMessageVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +31,7 @@ import java.util.List;
 public class GroupChatController {
     @Autowired
     private GroupChatService groupChatService;
+
 
     /**
      * 获取小组历史消息
@@ -99,5 +104,14 @@ public class GroupChatController {
         return Result.ok(messageIds);
     }
 
+    /**
+     * 删除当前全部小组
+     */
+    @DeleteMapping("/deleteAll")
+    @Operation(summary = "删除当前全部小组")
+    public Result<?> deleteAll(Integer subjectId,Long createdBy) {
+        log.info("删除当前全部小组");
+        return groupChatService.deleteAll(subjectId,createdBy);
+    }
 
 }

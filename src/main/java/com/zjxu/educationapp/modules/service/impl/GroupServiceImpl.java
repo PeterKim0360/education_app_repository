@@ -204,8 +204,12 @@ public class GroupServiceImpl implements GroupService {
                         groupTeamMember.setWorkId(groupTeam.getWorkId());
                         groupTeamMember.setMemberIndex(i);
 
-                        // 第一个成员设为队长
-                        if (groupTeamMembers.isEmpty() && occupiedPositions.isEmpty()) {
+                        // 检查是否已有队长
+                        boolean hasLeader = groupTeamMembers.stream()
+                                .anyMatch(member -> member.getRole() == 1);
+                        // 分配角色
+                        if (!hasLeader && i == 0) {
+                            // 只有在位置0且没有队长时才设为队长
                             groupTeamMember.setRole(1);
                             groupTeam.setLeaderId(studentId);
                             groupTeamMapper.updateById(groupTeam);
@@ -296,7 +300,6 @@ public class GroupServiceImpl implements GroupService {
         List<GroupTeam> groupTeams = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
                 .eq(GroupTeam::getSubjectId, subjectId)
                 .eq(GroupTeam::getCreatedBy, createdBy)
-                .eq(GroupTeam::getStatus, 0)
                 .eq(GroupTeam::getLogicalDel, 0));
         log.info("小组列表:{}",groupTeams);
         List<Long> teamIds = groupTeams.stream().map(GroupTeam::getId).toList();
@@ -309,10 +312,12 @@ public class GroupServiceImpl implements GroupService {
             groupTeamVO.setCapacity(groupTeam.getCapacity());
             groupTeamVO.setCurrentCount(groupTeam.getCurrentNum());
 
+            log.info("小组ID:{}",teamId);
             List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
                     .eq(GroupTeamMember::getTeamId, teamId)
                     .eq(GroupTeamMember::getStatus, 1)
                     .orderByAsc(GroupTeamMember::getMemberIndex));
+            log.info("小组成员列表:{}",groupTeamMembers);
 //            List<StudentDTO> students = new ArrayList<>(groupTeamMembers.stream().map(groupTeamMember -> {
 //                StudentDTO studentDTO = new StudentDTO();
 //                UserEntity userEntity = userMapper.selectById(groupTeamMember.getUserId());
@@ -347,9 +352,9 @@ public class GroupServiceImpl implements GroupService {
                     students.add(studentDTO);
                     num++;
                 }
-                log.info("小组成员:{}",students);
-            }
 
+            }
+            log.info("小组成员:{}",students);
             groupTeamVO.setStudents(students);
             list.add(groupTeamVO);
         }

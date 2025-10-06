@@ -13,4 +13,6 @@ public interface GroupChatService {
     Long saveMessage(GroupChatMessageDTO groupChatMessageDTO);
 
     List<Long> saveAllMessage(GroupChatMessageByTeachDTO messageByTeachDTO);
+
+    Result<?> deleteAll(Integer subjectId, Long createdBy);
 }

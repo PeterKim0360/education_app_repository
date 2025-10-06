@@ -1,12 +1,17 @@
 package com.zjxu.educationapp.modules.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageByTeachDTO;
 import com.zjxu.educationapp.modules.dto.GroupChatMessageDTO;
 import com.zjxu.educationapp.modules.entity.GroupChatMessage;
+import com.zjxu.educationapp.modules.entity.GroupTeam;
+import com.zjxu.educationapp.modules.entity.GroupTeamMember;
 import com.zjxu.educationapp.modules.mapper.GroupChatMessageMapper;
+import com.zjxu.educationapp.modules.mapper.GroupTeamMapper;
+import com.zjxu.educationapp.modules.mapper.GroupTeamMemberMapper;
 import com.zjxu.educationapp.modules.service.GroupChatService;
 import com.zjxu.educationapp.modules.vo.GroupChatHistoryResponseVO;
 import java.util.Date;
@@ -18,12 +23,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+
 @Service
 @Slf4j
 public class GroupChatServiceImpl implements GroupChatService {
 
     @Autowired
     private GroupChatMessageMapper groupChatMessageMapper;
+    @Autowired
+    private GroupTeamMapper groupTeamMapper;
+    @Autowired
+    private GroupTeamMemberMapper groupTeamMemberMapper;
 
     /**
      * 获取小组历史消息
@@ -99,5 +110,26 @@ public class GroupChatServiceImpl implements GroupChatService {
             groupChatMessageMapper.insert(message);
             return message.getId();
         }).toList();
+    }
+
+    @Override
+    public Result<?> deleteAll(Integer subjectId, Long createdBy) {
+        List<GroupTeam> groupTeams = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
+                .eq(GroupTeam::getSubjectId, subjectId)
+                .eq(GroupTeam::getCreatedBy, createdBy)
+                .eq(GroupTeam::getLogicalDel, 0));
+        for (GroupTeam groupTeam : groupTeams) {
+            groupTeam.setLogicalDel(1);
+            groupTeamMapper.updateById(groupTeam);
+
+            List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
+                    .eq(GroupTeamMember::getTeamId, groupTeam.getId())
+                    .eq(GroupTeamMember::getStatus, 1));
+            for (GroupTeamMember groupTeamMember : groupTeamMembers) {
+                groupTeamMember.setStatus(0);
+                groupTeamMemberMapper.updateById(groupTeamMember);
+            }
+        }
+        return Result.ok();
     }
 }

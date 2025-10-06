@@ -40,6 +40,8 @@ public class TeacherCoursesServiceImpl implements TeacherCoursesService {
     private HomeworkInClassStuMapper homeworkInClassStuMapper;
     @Autowired
     private GroupTeamMapper groupTeamMapper;
+    @Autowired
+    private GroupTeamMemberMapper groupTeamMemberMapper;
 
     /**
      * 上传课件
@@ -104,7 +106,7 @@ public class TeacherCoursesServiceImpl implements TeacherCoursesService {
     @Override
     public Result<?> endClass(Integer subjectId) {
         long teacherId = StpUtil.getLoginIdAsLong();
-        //如果有进行小组分组的话，需要将小组删除
+        //如果有进行小组分组的话，需要将小组和组内学生删除
         List<GroupTeam> groupTeams = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
                 .eq(GroupTeam::getSubjectId, subjectId)
                 .eq(GroupTeam::getCreatedBy, teacherId)
@@ -113,6 +115,14 @@ public class TeacherCoursesServiceImpl implements TeacherCoursesService {
             for (GroupTeam groupTeam : groupTeams) {
                 groupTeam.setLogicalDel(1);
                 groupTeamMapper.updateById(groupTeam);
+
+                List<GroupTeamMember> groupTeamMembers = groupTeamMemberMapper.selectList(new LambdaQueryWrapper<GroupTeamMember>()
+                        .eq(GroupTeamMember::getTeamId, groupTeam.getId())
+                        .eq(GroupTeamMember::getStatus, 1));
+                for (GroupTeamMember groupTeamMember : groupTeamMembers) {
+                    groupTeamMember.setStatus(0);
+                    groupTeamMemberMapper.updateById(groupTeamMember);
+                }
             }
         }
         List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>()
