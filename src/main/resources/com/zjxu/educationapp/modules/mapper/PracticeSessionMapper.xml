@@ -15,10 +15,11 @@
             <result property="completed" column="completed" />
             <result property="createTime" column="create_time" />
             <result property="updateTime" column="update_time" />
+            <result property="questionType" column="question_type" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,student_id,subject_id,question_queue,wrong_questions,current_batch,
-        total_batches,completed,create_time,update_time
+        total_batches,completed,create_time,update_time,question_type
     </sql>
 </mapper>

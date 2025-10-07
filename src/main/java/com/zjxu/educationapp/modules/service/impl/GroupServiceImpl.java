@@ -274,20 +274,20 @@ public class GroupServiceImpl implements GroupService {
                 .eq(GroupTeam::getCreatedBy, createdBy)
                 .eq(GroupTeam::getStatus, 0)
                 .set(GroupTeam::getStatus, 1));
-        // 批量更新小组成员状态
-        List<Long> teamIds = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
-                        .eq(GroupTeam::getSubjectId, subjectId)
-                        .eq(GroupTeam::getCreatedBy, createdBy)
-                        .eq(GroupTeam::getStatus, 1))
-                .stream()
-                .map(GroupTeam::getId)
-                .toList();
-        if (!teamIds.isEmpty()) {
-            groupTeamMemberMapper.update(null, new LambdaUpdateWrapper<GroupTeamMember>()
-                    .in(GroupTeamMember::getTeamId, teamIds)
-                    .eq(GroupTeamMember::getStatus, 1)
-                    .set(GroupTeamMember::getStatus, 0));
-        }
+//        // 批量更新小组成员状态
+//        List<Long> teamIds = groupTeamMapper.selectList(new LambdaQueryWrapper<GroupTeam>()
+//                        .eq(GroupTeam::getSubjectId, subjectId)
+//                        .eq(GroupTeam::getCreatedBy, createdBy)
+//                        .eq(GroupTeam::getStatus, 1))
+//                .stream()
+//                .map(GroupTeam::getId)
+//                .toList();
+//        if (!teamIds.isEmpty()) {
+//            groupTeamMemberMapper.update(null, new LambdaUpdateWrapper<GroupTeamMember>()
+//                    .in(GroupTeamMember::getTeamId, teamIds)
+//                    .eq(GroupTeamMember::getStatus, 1)
+//                    .set(GroupTeamMember::getStatus, 0));
+//        }
         return Result.ok();
     }
 

@@ -373,6 +373,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
             session.setCurrentBatch(1);
             session.setTotalBatches(0);
             session.setCompleted(0);
+            session.setQuestionType(questionType);
 
             practiceSessionMapper.insert(session);
             //获取题目信息
@@ -495,6 +496,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
                             .eq("student_id", studentId)
                             .eq("subject_id", subjectId)
                             .eq("completed", 0)
+                            .eq("question_type", questionType)
                             .orderByDesc("update_time")
                             .last("limit 1")
             );
@@ -509,6 +511,7 @@ public class ErrorQuestionsServiceImpl extends ServiceImpl<ErrorQuestionsMapper,
                     new QueryWrapper<PracticeSession>()
                             .eq("student_id", studentId)
                             .eq("subject_id", subjectId)
+                            .eq("question_type", questionType)
                             .eq("completed", 0)
                             .orderByDesc("id")
                             .last("limit 1")

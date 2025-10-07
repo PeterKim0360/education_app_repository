@@ -64,4 +64,9 @@ public class PracticeSession {
      * 更新时间
      */
     private Date updateTime;
+
+    /**
+     * 题目类型
+     */
+    private Integer questionType;
 }

@@ -104,11 +104,13 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
                 .eq(StudentClassEntity::getStudentId, studentId)
                 .eq(StudentClassEntity::getStatus, 1));
         Long classId = studentClass.getClassId();
+        log.info("classId:{}", classId);
         //根据课程ID和班级ID查教师ID
         SubjectClassTeach subjectClassTeach = subjectClassTeachMapper.selectOne(new LambdaQueryWrapper<SubjectClassTeach>()
                 .eq(SubjectClassTeach::getClassId, classId)
                 .eq(SubjectClassTeach::getSubjectId, subjectId));
         Long teacherId = subjectClassTeach.getTeachId();
+        log.info("teacherId:{}", teacherId);
         detailVO.setTeacherId(teacherId);
         //根据教师ID查教师名
         UserEntity teacher = userMapper.selectById(teacherId);
@@ -117,7 +119,8 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
         //根据教师ID和课程ID查文件url、文件描述、上传时间
         CourseHistory courseHistory = courseHistoryMapper.selectOne(new LambdaQueryWrapper<CourseHistory>()
                 .eq(CourseHistory::getTeacherId, teacherId)
-                .eq(CourseHistory::getSubjectId, subjectId));
+                .eq(CourseHistory::getSubjectId, subjectId)
+                .eq(CourseHistory::getStudentId, studentId));
         List<String> urls = JSONUtil.toList(courseHistory.getFileUrl(), String.class);
         log.info("文件url:{}", urls);
         List<String> filenames = JSONUtil.toList(courseHistory.getFileDescription(), String.class);
