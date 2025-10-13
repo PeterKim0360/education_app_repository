@@ -43,7 +43,7 @@ public class StudentCoursesController {
      */
     @Operation(summary = "获取课程详情",description = "传参：subjectId")
     @GetMapping("/detail")
-    public Result<StuSubjectDetailVO> queryDetail(@RequestParam("subjectId") Integer subjectId) {
+    public Result<List<StuSubjectDetailVO>> queryDetail(@RequestParam("subjectId") Integer subjectId) {
         log.info("用户请求获取课程详情");
         return studentCoursesService.queryDetail(subjectId);
     }
@@ -114,6 +114,16 @@ public class StudentCoursesController {
             @RequestParam(value = "weekday",required = false) String weekday){
         return studentCoursesService.queryCombinedSimple(week,weekday);
     }
+
+//    /**
+//     * 查询课表（一周内）
+//     */
+//    @Operation(summary = "查询课表（一周内）",description = "传参：week")
+//    @GetMapping("/schedule/week")
+//    public Result<List<ScheduleDetailVO>> queryScheduleWeek(@RequestParam("week") String week){
+//        log.info("用户请求查询课表（一周内）:{}", week);
+//        return studentCoursesService.queryScheduleWeek(week);
+//    }
 
 //    /**
 //     * 查询课表（详细）

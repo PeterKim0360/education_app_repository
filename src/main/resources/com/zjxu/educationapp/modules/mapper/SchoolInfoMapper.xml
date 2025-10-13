@@ -14,11 +14,11 @@
             <result property="is985" column="is_985" />
             <result property="is211" column="is_211" />
             <result property="schoolRank" column="school_rank" />
-            <result property="provinceId" column="province_id" />
+        <result property="url" column="url" />
     </resultMap>
 
     <sql id="Base_Column_List">
         school_id,school_name,simple_address,detailed_address,emblem_url,school_profile,
-        is_985,is_211,school_rank,province_id
+        is_985,is_211,school_rank,url
     </sql>
 </mapper>

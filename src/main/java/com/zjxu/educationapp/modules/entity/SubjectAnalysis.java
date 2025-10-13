@@ -7,15 +7,18 @@ public class SubjectAnalysis {
     private int totalAssignments;     // 作业总数
     private String suggestion;        // 学习建议
     private int recommendedHours;     // 推荐学习时间(小时/周)
+
+    private String staticUrl;
     
     public SubjectAnalysis() {}
     
-    public SubjectAnalysis(String subject, double averageScore, int totalAssignments, String suggestion, int recommendedHours) {
+    public SubjectAnalysis(String subject, double averageScore, int totalAssignments, String suggestion, int recommendedHours, String staticUrl) {
         this.subject = subject;
         this.averageScore = averageScore;
         this.totalAssignments = totalAssignments;
         this.suggestion = suggestion;
         this.recommendedHours = recommendedHours;
+        this.staticUrl = staticUrl;
     }
     
     // Getters and Setters
@@ -57,5 +60,13 @@ public class SubjectAnalysis {
     
     public void setRecommendedHours(int recommendedHours) {
         this.recommendedHours = recommendedHours;
+    }
+
+    public String getStaticUrl() {
+        return staticUrl;
+    }
+
+    public void setStaticUrl(String staticUrl) {
+        this.staticUrl = staticUrl;
     }
 }

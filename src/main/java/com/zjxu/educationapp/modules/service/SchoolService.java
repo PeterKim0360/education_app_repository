@@ -18,10 +18,9 @@ public interface SchoolService extends IService<SchoolInfo> {
     /**
      * 根据学校id查详情
      * @param schoolId
-     * @param provinceId
      * @return
      */
-    Result<SchoolDetailVO> queryDetail(Long schoolId, Long provinceId);
+    Result<SchoolDetailVO> queryDetail(Long schoolId);
 
     /**
      * 根据输入的成绩查看可能录取的学校

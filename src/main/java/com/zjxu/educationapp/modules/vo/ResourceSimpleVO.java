@@ -15,4 +15,5 @@ public class ResourceSimpleVO {
     private String author;
     private Long viewCount;
     private Long likeCount;
+    private Integer modelType;
 }

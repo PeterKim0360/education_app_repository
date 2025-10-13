@@ -4,12 +4,14 @@ import java.util.List;
 public class LearningPlan {
     private List<SubjectAnalysis> subjectAnalyses;
     private String overallSuggestion;
+    private String leidaPicture;
     
     public LearningPlan() {}
     
-    public LearningPlan(List<SubjectAnalysis> subjectAnalyses, String overallSuggestion) {
+    public LearningPlan(List<SubjectAnalysis> subjectAnalyses, String overallSuggestion,String leidaPicture) {
         this.subjectAnalyses = subjectAnalyses;
         this.overallSuggestion = overallSuggestion;
+        this.leidaPicture = leidaPicture;
     }
     
     // Getters and Setters
@@ -28,4 +30,9 @@ public class LearningPlan {
     public void setOverallSuggestion(String overallSuggestion) {
         this.overallSuggestion = overallSuggestion;
     }
+
+    public String getLeidaPicture() {
+        return leidaPicture;
+    }
+
 }

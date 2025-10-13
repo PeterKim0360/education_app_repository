@@ -47,13 +47,13 @@ public class SchoolInfo {
     /**
      * 是否为985（1：是，0：不是）
      */
-    @TableField(value = "is_985")
+    @TableField("is_985")
     private Boolean is985;
 
     /**
      * 是否为211（1：是，0：不是）
      */
-    @TableField(value = "is_211")
+    @TableField("is_211")
     private Boolean is211;
 
     /**
@@ -62,7 +62,7 @@ public class SchoolInfo {
     private Integer schoolRank;
 
     /**
-     * 省份ID（1为浙江省）
+     * url
      */
-    private Long provinceId;
+    private String url;
 }

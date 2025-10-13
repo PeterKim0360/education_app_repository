@@ -18,7 +18,7 @@ public interface StudentCoursesService {
      * @param subjectId
      * @return
      */
-    Result<StuSubjectDetailVO> queryDetail(Integer subjectId);
+    Result<List<StuSubjectDetailVO>> queryDetail(Integer subjectId);
 
     /**
      * 查询随堂作业（只展示刚发布未截止的）
@@ -58,6 +58,13 @@ public interface StudentCoursesService {
      * @return
      */
     Result<List<ScheduleDetailVO>> queryCombinedSimple(String week, String weekday);
+
+//    /**
+//     * 获取课表（一周内）
+//     * @param week
+//     * @return
+//     */
+//    Result<List<ScheduleDetailVO>> queryScheduleWeek(String week);
 
 
 //    /**

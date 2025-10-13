@@ -9,6 +9,7 @@ import java.util.List;
 public class TeachCreateHWDetailVO {
     private Long homeworkId;
     private String subject;
+    private Integer subjectId;
     private String homeworkName;
     private String homeworkContent;
     private Date deadTime;

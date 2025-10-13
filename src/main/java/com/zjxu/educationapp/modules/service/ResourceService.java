@@ -3,7 +3,6 @@ package com.zjxu.educationapp.modules.service;
 import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.entity.Resource;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zjxu.educationapp.modules.vo.NewSimpleVO;
 import com.zjxu.educationapp.modules.vo.ResourceDetailVO;
 import com.zjxu.educationapp.modules.vo.ResourceSimpleVO;
 
@@ -20,7 +19,7 @@ public interface ResourceService extends IService<Resource> {
      * 获取资源列表
      * @return
      */
-    Result<List<ResourceSimpleVO>> resourcesSimpleList();
+    Result<List<ResourceSimpleVO>> resourcesSimpleList(Integer modelType);
 
     /**
      * 获取资源详情

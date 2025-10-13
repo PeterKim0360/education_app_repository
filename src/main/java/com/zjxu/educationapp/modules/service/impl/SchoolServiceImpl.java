@@ -60,21 +60,20 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolInfoMapper, SchoolInfo>
     /**
      * 根据学校id查详情
      * @param schoolId
-     * @param provinceId
      * @return
      */
     @Override
-    public Result<SchoolDetailVO> queryDetail(Long schoolId, Long provinceId) {
-        //根据省份ID和学校ID查询该学校最低分数
-        ProvinceInfo provinceInfo = provinceInfoMapper.selectOne(new QueryWrapper<ProvinceInfo>().eq("school_id", schoolId).eq("province_id",provinceId));
-        if (provinceInfo==null){
-            log.error("信息还未录入");
-            return Result.error();
-        }
-        //将最低分存入VO
+    public Result<SchoolDetailVO> queryDetail(Long schoolId) {
+//        //根据省份ID和学校ID查询该学校最低分数
+//        ProvinceInfo provinceInfo = provinceInfoMapper.selectOne(new QueryWrapper<ProvinceInfo>().eq("school_id", schoolId).eq("province_id",provinceId));
+//        if (provinceInfo==null){
+//            log.error("信息还未录入");
+//            return Result.error();
+//        }
+//        //将最低分存入VO
         SchoolDetailVO schoolDetailVO = new SchoolDetailVO();
-        //拷贝信息到VO
-        BeanUtils.copyProperties(provinceInfo,schoolDetailVO);
+//        //拷贝信息到VO
+//        BeanUtils.copyProperties(provinceInfo,schoolDetailVO);
         //根据学校ID查询学校详细信息
         SchoolInfo schoolInfo = schoolInfoMapper.selectOne(new QueryWrapper<SchoolInfo>().eq("school_id", schoolId));
         //拷贝信息到VO

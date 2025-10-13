@@ -33,7 +33,7 @@ public class TeachHomework {
     private Long userId;
 
     /**
-     * 是否批改：0，未批改；1，已批改
+     * 是否批改：0，未批改；1，已批改完成；2，批改进行中
      */
     private Integer correct;
 

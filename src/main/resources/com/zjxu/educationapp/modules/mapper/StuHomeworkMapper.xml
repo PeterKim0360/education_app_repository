@@ -25,6 +25,7 @@
         SELECT * FROM stu_homework
         WHERE user_id=#{userId}
         AND complete_and_correct=1
+        AND logical_deletion=1
         <if test="subjectId!=null">
             AND subject_id=#{subjectId}
         </if>

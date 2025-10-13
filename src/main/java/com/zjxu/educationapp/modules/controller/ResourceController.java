@@ -39,9 +39,9 @@ public class ResourceController {
      */
     @Operation(summary = "获取资源列表")
     @GetMapping("/list")
-    public Result<List<ResourceSimpleVO>> resourcesSimpleList(){
+    public Result<List<ResourceSimpleVO>> resourcesSimpleList(@RequestParam("modelType") Integer modelType){
         log.info("获取资源列表");
-        return resourceService.resourcesSimpleList();
+        return resourceService.resourcesSimpleList(modelType);
     }
 
     /**

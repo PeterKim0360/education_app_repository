@@ -2,6 +2,7 @@ package com.zjxu.educationapp.modules.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 
+import com.alibaba.fastjson.JSONException;
 import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionContentPart;
 import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
@@ -21,6 +22,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.HomeworkSubmissionDTO;
 import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.dto.TeachCreateHomeworkDTO;
+import com.zjxu.educationapp.modules.dto.TeachEditHomeworkDTO;
 import com.zjxu.educationapp.modules.entity.*;
 import com.zjxu.educationapp.modules.mapper.*;
 import com.zjxu.educationapp.modules.service.TeachHomeworkService;
@@ -121,7 +123,8 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         Page<TeachHomework> teachHomeworkPage = teachHomeworkMapper.selectPage(new Page<TeachHomework>(page, size), new QueryWrapper<TeachHomework>()
                 .eq("user_id", userId)
                 .isNull("send_time")
-                .orderByDesc("update_time"));
+                .orderByDesc("update_time")
+                .eq("logical_deletion", 1));
         IPage<TeachCreateHWSimpleVO> teachCreateHWSimpleVOIPage = teachHomeworkPage.convert(teachHomework -> {
             TeachCreateHWSimpleVO teachCreateHWSimpleVO = new TeachCreateHWSimpleVO();
             BeanUtils.copyProperties(teachHomework, teachCreateHWSimpleVO);
@@ -146,11 +149,13 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
         TeachHomework teachHomework = teachHomeworkMapper.selectOne(
                 new LambdaQueryWrapper<TeachHomework>()
                         .eq(TeachHomework::getHomeworkId, homeworkId)
-                        .eq(TeachHomework::getUserId, userId));
+                        .eq(TeachHomework::getUserId, userId)
+                        .isNull(TeachHomework::getSendTime));
         TeachCreateHWDetailVO teachCreateHWDetailVO = new TeachCreateHWDetailVO();
         BeanUtils.copyProperties(teachHomework, teachCreateHWDetailVO);
         //根据subjectID找对应名称
         Integer subjectId = teachHomework.getSubjectId();
+        teachCreateHWDetailVO.setSubjectId(subjectId);
         Subjects subject = subjectsMapper.selectById(subjectId);
         teachCreateHWDetailVO.setSubject(subject == null ? "未知科目" : subject.getSubjectName());
         teachCreateHWDetailVO.setImageUrls(JSON.parseArray(teachHomework.getImageUrls(), String.class));
@@ -160,18 +165,22 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     /**
      * 编辑作业
      *
-     * @param teachCreateHomeworkDTO
+     * @param teachEditHomeworkDTO
      * @return
      */
     @Override
-    public Result<?> editCreateHW(TeachCreateHomeworkDTO teachCreateHomeworkDTO) {
+    public Result<?> editCreateHW(TeachEditHomeworkDTO teachEditHomeworkDTO) {
         TeachHomework teachHomework = new TeachHomework();
-        BeanUtils.copyProperties(teachCreateHomeworkDTO, teachHomework);
-        teachHomework.setImageUrls(teachCreateHomeworkDTO.getImageUrls() == null ? "" : JSON.toJSONString(teachCreateHomeworkDTO.getImageUrls()));
+        BeanUtils.copyProperties(teachEditHomeworkDTO, teachHomework);
+//        Subjects subjects = subjectsMapper.selectOne(new LambdaQueryWrapper<Subjects>()
+//                .eq(Subjects::getSubjectName, teachEditHomeworkDTO.getSubjectName()));
+//        Integer subjectId = subjects.getSubjectId();
+//        teachHomework.setSubjectId(subjectId);
+        teachHomework.setImageUrls(teachEditHomeworkDTO.getImageUrls() == null ? "" : JSON.toJSONString(teachEditHomeworkDTO.getImageUrls()));
         //更新更新时间
         teachHomework.setUpdateTime(new Date());
         teachHomeworkMapper.update(teachHomework, new LambdaQueryWrapper<TeachHomework>()
-                .eq(TeachHomework::getHomeworkId, teachCreateHomeworkDTO.getHomeworkId())
+                .eq(TeachHomework::getHomeworkId, teachEditHomeworkDTO.getHomeworkId())
                 .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong()));
         return Result.ok();
     }
@@ -320,6 +329,8 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong()));
         TeachSendHWDetailVO teachSendHWDetailVO = new TeachSendHWDetailVO();
         BeanUtils.copyProperties(teachHomework, teachSendHWDetailVO);
+        Subjects subjects = subjectsMapper.selectById(teachHomework.getSubjectId());
+        teachSendHWDetailVO.setSubject(subjects == null ? "未知学科" : subjects.getSubjectName());
         teachSendHWDetailVO.setImageUrls(teachHomework.getImageUrls() == null ? List.of() : JSON.parseArray(teachHomework.getImageUrls(), String.class));
         return Result.ok(teachSendHWDetailVO);
     }
@@ -341,6 +352,15 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 .eq(StuHomework::getCompleteAndCorrect, 2)
                 .eq(StuHomework::getLogicalDeletion, 1)
                 .orderByDesc(StuHomework::getSubmitTime));
+        log.info("待批改作业为{}", stuHomeworks);
+        if (stuHomeworks.isEmpty()){
+            TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                    .eq(TeachHomework::getHomeworkId, homeworkId)
+                    .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong()));
+            teachHomework.setCorrect(1);
+            teachHomeworkMapper.updateById(teachHomework);
+            return Result.ok(List.of());
+        }
         List<HomeworkSubmissionVO> homeworkSubmissionList = new ArrayList<>();
         for (StuHomework stuHomework : stuHomeworks) {
             HomeworkSubmissionVO homeworkSubmissionVO = new HomeworkSubmissionVO();
@@ -357,19 +377,22 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     /**
      * 查询所有待批改作业
      *
-     * @param size
-     * @param page
      * @return
      */
     @Override
-    public Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList(int page, int size) {
+    public Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList() {
         long teacherId = StpUtil.getLoginIdAsLong();
         //教师ID，截止日期，是否批改，是否存在
         List<TeachHomework> homeworks = teachHomeworkMapper.selectList(new LambdaQueryWrapper<TeachHomework>()
                 .eq(TeachHomework::getUserId, teacherId)
-                .eq(TeachHomework::getCorrect, 0)
                 .eq(TeachHomework::getLogicalDeletion, 1)
-                .lt(TeachHomework::getDeadTime, new Date()));
+                .lt(TeachHomework::getDeadTime, new Date())
+                .eq(TeachHomework::getCorrect, 0)
+                .or()
+                .eq(TeachHomework::getCorrect, 2));
+        if (homeworks == null){
+            return Result.ok(List.of());
+        }
         List<TeachUnCorrectSimHWVO> teachUnCorrectSimHWVOS = homeworks.stream().map(homework -> {
             TeachUnCorrectSimHWVO teachUnCorrectSimHWVO = new TeachUnCorrectSimHWVO();
             teachUnCorrectSimHWVO.setHomeworkId(homework.getHomeworkId());
@@ -389,6 +412,15 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
      */
     @Override
     public Result<?> correctHW(HomeworkSubmissionDTO homeworkSubmissionDTO) {
+        // 根据作业ID，更新老师作业状态
+        TeachHomework teachHomework = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId, homeworkSubmissionDTO.getHomeworkId())
+                .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong())
+                .eq(TeachHomework::getCorrect,0));
+        if (teachHomework!=null){
+            teachHomework.setCorrect(2);
+            teachHomeworkMapper.updateById(teachHomework);
+        }
         //根据学生ID，作业ID，是否存在查询作业信息
         StuHomework stuHomework = stuHomeworkMapper.selectOne(new LambdaQueryWrapper<StuHomework>()
                 .eq(StuHomework::getUserId, homeworkSubmissionDTO.getStudentId())
@@ -417,6 +449,9 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                 .eq(StuHomework::getCompleteAndCorrect, 3)
                 .eq(StuHomework::getLogicalDeletion, 1)
                 .orderByDesc(StuHomework::getCorrectTime));
+        if (stuHomeworks== null){
+            return Result.ok(List.of());
+        }
         List<CorrectVO> correctList = new ArrayList<>();
         for (StuHomework stuHomework : stuHomeworks) {
             CorrectVO correctVO = new CorrectVO();
@@ -437,7 +472,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
      * @return
      */
     @Override
-    public Result<?> createHWByAI(String msg) {
+    public Result<?> createHWByAI(String msg, Integer subjectId) {
         try {
             //获取当前用户ID
             long userId = StpUtil.getLoginIdAsLong();
@@ -456,6 +491,7 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
             teachHomework.setUserId(userId);
             teachHomework.setCreatedTime(now);
             teachHomework.setUpdateTime(now);
+            teachHomework.setSubjectId(subjectId);
             teachHomeworkMapper.insert(teachHomework);
         } catch (Exception e) {
             log.error("AI生成作业失败", e);
@@ -472,7 +508,15 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
     public Result<?> correctHWByAI(StuHWSubmitDTO stuHWSubmitDTO) {
         Long homeworkId = stuHWSubmitDTO.getHomeworkId();
         Long studentId = stuHWSubmitDTO.getStudentId();
-
+        // 根据作业ID，更新老师作业状态
+        TeachHomework teachHomework1 = teachHomeworkMapper.selectOne(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getHomeworkId, stuHWSubmitDTO.getHomeworkId())
+                .eq(TeachHomework::getUserId, StpUtil.getLoginIdAsLong())
+                .eq(TeachHomework::getCorrect,0));
+        if (teachHomework1!=null){
+            teachHomework1.setCorrect(2);
+            teachHomeworkMapper.updateById(teachHomework1);
+        }
         try {
             // 1. 权限校验与基础数据查询
             long teacherId = StpUtil.getLoginIdAsLong();
@@ -513,11 +557,11 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                     "1. 分析学生作业图片内容\n" +
                     "2. 根据作业要求判断答案是否正确\n" +
                     "3. 给出评分(0-100分)\n" +
-                    "4. 提供详细的评语，包括优点、不足和改进建议\n" +
+                    "4. 提供不用太详细但需要有关键词的评语，包括优点、不足和改进建议，10个字以内\n" +
                     "请严格按照以下JSON格式返回结果，不要包含其他内容：\n" +
                     "{\n" +
                     "  \"score\": 90,\n" +
-                    "  \"comment\": \"详细的评语内容\",\n" +
+                    "  \"comment\": \"不用太详细但需要有关键词的评语内容，不要使用反斜杠开头的数学符号命令，如\\limits, \\times等，用文字描述或使用Unicode符号\",\n" +
                     "  \"correctedImageUrl\": null\n" +
                     "}";
 
@@ -546,6 +590,34 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
             log.error("豆包大模型作业批改流程异常 - 作业ID: {}, 学生ID: {}", homeworkId, studentId, e);
             return Result.error("系统异常: " + e.getMessage());
         }
+    }
+
+    /**
+     * 查询已批改作业列表
+     */
+    @Override
+    public Result<List<CorrectSimpleVO>> queryCorSimList() {
+        long teacherId = StpUtil.getLoginIdAsLong();
+        List<TeachHomework> homeworks = teachHomeworkMapper.selectList(new LambdaQueryWrapper<TeachHomework>()
+                .eq(TeachHomework::getUserId, teacherId)
+                .eq(TeachHomework::getLogicalDeletion, 1)
+                .and(wrapper -> wrapper.eq(TeachHomework::getCorrect, 2)
+                        .or()
+                        .eq(TeachHomework::getCorrect, 1)));
+        log.info("查询已批改作业列表 - 教师ID: {}", teacherId);
+        log.info("查询已批改作业列表 - 结果: {}", homeworks);
+        if (homeworks.isEmpty()){
+            return Result.ok(List.of());
+        }
+        List<CorrectSimpleVO> correctSimpleVOS = homeworks.stream().map(homework -> {
+            CorrectSimpleVO correctSimpleVO = new CorrectSimpleVO();
+            correctSimpleVO.setHomeworkId(homework.getHomeworkId());
+            correctSimpleVO.setHomeworkName(homework.getHomeworkName());
+            correctSimpleVO.setSubjectId(homework.getSubjectId());
+            correctSimpleVO.setSubjectName(subjectsMapper.selectById(homework.getSubjectId()).getSubjectName());
+            return correctSimpleVO;
+        }).toList();
+        return Result.ok(correctSimpleVOS);
     }
 
 
@@ -605,16 +677,63 @@ public class TeachHomeworkServiceImpl extends ServiceImpl<TeachHomeworkMapper, T
                     .build();
 
             // 发起请求并获取结果
+            // 在 callDoubaoModel 方法中，在JSON解析前添加预处理
             String aiResponse = (String) service.createChatCompletion(chatCompletionRequest)
                     .getChoices().get(0).getMessage().getContent();
 
+            // 预处理AI响应，修复潜在的转义问题
+            if (aiResponse != null) {
+                // 先进行JSON转义处理
+                aiResponse = aiResponse.replace("\\\"", "\"")  // 修复双引号转义
+                        .replace("\\\\", "\\");  // 修复双重反斜杠
+
+                // 清理可能导致JSON解析错误的转义字符
+                aiResponse = aiResponse.replace("\\geq", "≥")
+                        .replace("\\leq", "≤")
+                        .replace("\\limits", "lim")
+                        .replace("\\times", "×")
+                        .replace("\\to", "→")
+                        .replace("\\infty", "∞")
+                        .replace("\\int", "∫")
+                        .replace("\\sum", "∑")
+                        .replace("\\sqrt", "√")
+                        .replace("\\left", "")
+                        .replace("\\right", "")
+                        .replace("\\(", "(")
+                        .replace("\\)", ")");
+            }
+
+
+
             // 解析AI返回的JSON结果
-            return JSON.parseObject(aiResponse, DoubaoHomeworkCorrectionResult.class);
+            try {
+                return JSON.parseObject(aiResponse, DoubaoHomeworkCorrectionResult.class);
+            } catch (JSONException e) {
+                log.warn("首次JSON解析失败，原始响应: {}", aiResponse);
+                // 尝试更彻底的清理
+                if (aiResponse != null) {
+                    // 使用正则表达式移除所有LaTeX命令
+                    aiResponse = aiResponse.replaceAll("\\\\[a-zA-Z]+", ""); // 移除所有\开头的字母命令
+                    aiResponse = aiResponse.replaceAll("\\s+", " ").trim();  // 规范化空格
+
+                    try {
+                        DoubaoHomeworkCorrectionResult result = JSON.parseObject(aiResponse, DoubaoHomeworkCorrectionResult.class);
+                        log.info("清理后解析成功");
+                        return result;
+                    } catch (JSONException e2) {
+                        log.error("清理后仍然无法解析JSON，原始响应: {}", aiResponse);
+                    }
+                }
+                throw e;
+            }
+
+
 
         } finally {
             service.shutdownExecutor();
         }
     }
+
 
 
     /**

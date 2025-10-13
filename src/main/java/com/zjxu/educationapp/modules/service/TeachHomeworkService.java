@@ -5,6 +5,7 @@ import com.zjxu.educationapp.common.utils.Result;
 import com.zjxu.educationapp.modules.dto.HomeworkSubmissionDTO;
 import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.dto.TeachCreateHomeworkDTO;
+import com.zjxu.educationapp.modules.dto.TeachEditHomeworkDTO;
 import com.zjxu.educationapp.modules.entity.TeachHomework;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zjxu.educationapp.modules.vo.*;
@@ -39,10 +40,10 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
 
     /**
      * 编辑作业
-     * @param teachCreateHomeworkDTO
+     * @param teachEditHomeworkDTO
      * @return
      */
-    Result<?> editCreateHW(TeachCreateHomeworkDTO teachCreateHomeworkDTO);
+    Result<?> editCreateHW(TeachEditHomeworkDTO teachEditHomeworkDTO);
 
     /**
      * 删除已创建的作业 (含批量)
@@ -90,7 +91,7 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
      *
      * @return
      */
-    Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList(int page, int  size);
+    Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList();
 
     /**
      * 批改作业
@@ -111,7 +112,7 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
      *
      * @return
      */
-    Result<?> createHWByAI(String msg);
+    Result<?> createHWByAI(String msg, Integer subjectId);
 
     /**
      * AI 批改作业
@@ -119,4 +120,11 @@ public interface TeachHomeworkService extends IService<TeachHomework> {
      * @return
      */
     Result<?> correctHWByAI(StuHWSubmitDTO stuHWSubmitDTO);
+
+    /**
+     * 查看已批改作业列表
+     *
+     * @return
+     */
+    Result<List<CorrectSimpleVO>> queryCorSimList();
 }

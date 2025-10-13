@@ -7,7 +7,6 @@ import com.zjxu.educationapp.modules.entity.Resource;
 import com.zjxu.educationapp.modules.mapper.NewsMapper;
 import com.zjxu.educationapp.modules.service.ResourceService;
 import com.zjxu.educationapp.modules.mapper.ResourceMapper;
-import com.zjxu.educationapp.modules.vo.NewSimpleVO;
 import com.zjxu.educationapp.modules.vo.ResourceDetailVO;
 import com.zjxu.educationapp.modules.vo.ResourceSimpleVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +33,10 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource>
      * @return
      */
     @Override
-    public Result<List<ResourceSimpleVO>> resourcesSimpleList() {
+    public Result<List<ResourceSimpleVO>> resourcesSimpleList(Integer modelType) {
         List<Resource> resources = resourceMapper.selectList(new LambdaQueryWrapper<Resource>()
                 .eq(Resource::getStatus, 1)
+                .eq(Resource::getModelType, modelType)
                 .orderByDesc(Resource::getUpdateTime));
         List<ResourceSimpleVO> resourcesSimpleVOList = new ArrayList<>();
         for (Resource resource : resources) {
@@ -50,6 +50,7 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource>
                     .author(resource.getAuthor())
                     .viewCount(resource.getViewCount())
                     .likeCount(resource.getLikeCount())
+                    .modelType(resource.getModelType())
                     .build();
             resourcesSimpleVOList.add(resourceSimpleVO);
         }

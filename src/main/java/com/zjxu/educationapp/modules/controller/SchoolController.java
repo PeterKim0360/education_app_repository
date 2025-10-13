@@ -54,13 +54,12 @@ public class SchoolController {
     /**
      * 根据学校id查详情
      */
-    @Operation(summary = "根据学校id查详情",description = "传参：schoolId;可选：provinceId")
+    @Operation(summary = "根据学校id查详情",description = "传参：schoolId")
     @GetMapping("/detail")
     public Result<SchoolDetailVO> QuerySchoolInfo(
-            @RequestParam("schoolId") Long schoolId,
-            @RequestParam(value = "provinceId",required = false,defaultValue = "1") Long provinceId){
-        log.info("查看学校详情，学校ID：{}，查询省份ID：{}",schoolId,provinceId);
-        return schoolService.queryDetail(schoolId,provinceId);
+            @RequestParam("schoolId") Long schoolId){
+        log.info("查看学校详情，学校ID：{}",schoolId);
+        return schoolService.queryDetail(schoolId);
     }
 
     /**

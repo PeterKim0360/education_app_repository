@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,9 +48,11 @@ public class TeacherServiceImpl implements TeacherService {
     public Result<List<SubjectsVO>> getSubjects() {
         //获取当前教师对应的ID
         long userId = StpUtil.getLoginIdAsLong();
+        Set<Integer> subjectIds = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>().eq(SubjectClassTeach::getTeachId, userId))
+                .stream().map(SubjectClassTeach::getSubjectId).collect(Collectors.toSet());
         //获取当前教师对应的学科ID
-        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>().eq(SubjectClassTeach::getTeachId, userId));
-        List<Integer> subjectIds = subjectClassTeaches.stream().map(SubjectClassTeach::getSubjectId).toList();
+//        List<SubjectClassTeach> subjectClassTeaches = subjectClassTeachMapper.selectList(new LambdaQueryWrapper<SubjectClassTeach>().eq(SubjectClassTeach::getTeachId, userId));
+//        List<Integer> subjectIds = subjectClassTeaches.stream().map(SubjectClassTeach::getSubjectId).toList();
         //封装返回数据
         List<SubjectsVO> subjectsVOS=new ArrayList<>();
         for (Integer subjectId : subjectIds) {

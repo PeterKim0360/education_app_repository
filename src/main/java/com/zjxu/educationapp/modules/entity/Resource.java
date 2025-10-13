@@ -79,4 +79,9 @@ public class Resource {
      * 逻辑删除：0，删除；1，启用
      */
     private Integer status;
+
+    /**
+     * 板块类型：1-猜你喜欢；2-资源
+     */
+    private Integer modelType;
 }

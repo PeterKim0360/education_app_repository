@@ -91,12 +91,9 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
      * @return
      */
     @Override
-    public Result<StuSubjectDetailVO> queryDetail(Integer subjectId) {
-        StuSubjectDetailVO detailVO = new StuSubjectDetailVO();
+    public Result<List<StuSubjectDetailVO>> queryDetail(Integer subjectId) {
         //根据科目ID查询科目名称
         Subjects subject = subjectsMapper.selectById(subjectId);
-        detailVO.setSubjectId(subjectId);
-        detailVO.setSubjectName(subject.getSubjectName()==null?"未知学科":subject.getSubjectName());
         //获取当前学生ID
         long studentId = StpUtil.getLoginIdAsLong();
         //根据学生ID查询班级ID
@@ -111,27 +108,34 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
                 .eq(SubjectClassTeach::getSubjectId, subjectId));
         Long teacherId = subjectClassTeach.getTeachId();
         log.info("teacherId:{}", teacherId);
-        detailVO.setTeacherId(teacherId);
         //根据教师ID查教师名
         UserEntity teacher = userMapper.selectById(teacherId);
         String teacherName = teacher.getUserName();
-        detailVO.setTeacherName(teacherName);
         //根据教师ID和课程ID查文件url、文件描述、上传时间
-        CourseHistory courseHistory = courseHistoryMapper.selectOne(new LambdaQueryWrapper<CourseHistory>()
+        List<CourseHistory> courseHistories = courseHistoryMapper.selectList(new LambdaQueryWrapper<CourseHistory>()
                 .eq(CourseHistory::getTeacherId, teacherId)
                 .eq(CourseHistory::getSubjectId, subjectId)
                 .eq(CourseHistory::getStudentId, studentId));
-        List<String> urls = JSONUtil.toList(courseHistory.getFileUrl(), String.class);
-        log.info("文件url:{}", urls);
-        List<String> filenames = JSONUtil.toList(courseHistory.getFileDescription(), String.class);
-        log.info("文件描述:{}", filenames);
-        Map<String ,String> file=new HashMap<>();
-        for (int i = 0; i < urls.size(); i++) {
-            file.put(filenames.get(i), urls.get(i));
+        Map<String ,String> file=new LinkedHashMap<>();
+        List<StuSubjectDetailVO> detailVOList = new ArrayList<>();
+        for (CourseHistory courseHistory : courseHistories) {
+            StuSubjectDetailVO detailVO = new StuSubjectDetailVO();
+            List<String> urls = JSONUtil.toList(courseHistory.getFileUrl(), String.class);
+            log.info("文件url:{}", urls);
+            List<String> filenames = JSONUtil.toList(courseHistory.getFileDescription(), String.class);
+            log.info("文件描述:{}", filenames);
+            for (int i = 0; i < urls.size(); i++) {
+                file.put(filenames.get(i), urls.get(i));
+            }
+            log.info("文件:{}", file);
+            detailVO.setFile(file);
+            detailVO.setTeacherId(teacherId);
+            detailVO.setTeacherName(teacherName);
+            detailVO.setSubjectId(subjectId);
+            detailVO.setSubjectName(subject.getSubjectName()==null?"未知学科":subject.getSubjectName());
+            detailVOList.add(detailVO);
         }
-        log.info("文件:{}", file);
-        detailVO.setFile(file);
-        return Result.ok(detailVO);
+        return Result.ok(detailVOList);
     }
 
     /**
@@ -260,6 +264,32 @@ public class StudentCoursesServiceImpl implements StudentCoursesService {
         }).toList();
         return Result.ok(scheduleDetailVOList);
     }
+
+//    /**
+//     * 获取指定周的课表
+//     * @param week
+//     * @return
+//     */
+//    @Override
+//    public Result<List<ScheduleDetailVO>> queryScheduleWeek(String week) {
+//        long studentId = StpUtil.getLoginIdAsLong();
+//        List<Schedule> schedules = scheduleMapper.selectList(new LambdaQueryWrapper<Schedule>()
+//                .eq(Schedule::getWeek, week)
+//                .eq(Schedule::getUserId, studentId)
+//                .orderByAsc(Schedule::getWeekday)
+//                .orderByAsc(Schedule::getCourseTime));
+//        List<ScheduleDetailVO> scheduleDetailVOList = schedules.stream().map(schedule -> {
+//            ScheduleDetailVO scheduleDetailVO = new ScheduleDetailVO();
+//            BeanUtils.copyProperties(schedule, scheduleDetailVO);
+//            Long teacherId = schedule.getTeacherId();
+//            UserEntity teacher = userMapper.selectById(teacherId);
+//            scheduleDetailVO.setTeachName(teacher.getUserName());
+//            Boolean result = isCurrent(schedule);
+//            scheduleDetailVO.setIsCurrent(result ? 1 : 0);
+//            return scheduleDetailVO;
+//        }).toList();
+//        return Result.ok(scheduleDetailVOList);
+//    }
 
 //    /**
 //     * 获取课程安排（详细）

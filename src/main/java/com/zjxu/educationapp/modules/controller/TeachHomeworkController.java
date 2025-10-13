@@ -6,6 +6,7 @@ import com.zjxu.educationapp.modules.dto.HomeworkSubmissionDTO;
 import com.zjxu.educationapp.modules.dto.StuHWSubmitDTO;
 import com.zjxu.educationapp.modules.dto.TeachCreateHomeworkDTO;
 
+import com.zjxu.educationapp.modules.dto.TeachEditHomeworkDTO;
 import com.zjxu.educationapp.modules.service.TeachHomeworkService;
 import com.zjxu.educationapp.modules.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,9 +68,9 @@ public class TeachHomeworkController {
     @Operation(summary = "编辑作业",description = "传参：teachSendHomeworkDTO")
     @PostMapping("/create/edit")
     @Transactional
-    public Result<?> editCreateHW(@RequestBody TeachCreateHomeworkDTO teachCreateHomeworkDTO){
-        log.info("编辑作业,ID为:{}",teachCreateHomeworkDTO);
-        return teachHomeworkService.editCreateHW(teachCreateHomeworkDTO);
+    public Result<?> editCreateHW(@RequestBody TeachEditHomeworkDTO teachEditHomeworkDTO){
+        log.info("编辑作业,ID为:{}",teachEditHomeworkDTO);
+        return teachHomeworkService.editCreateHW(teachEditHomeworkDTO);
     }
 
     /**
@@ -100,9 +101,9 @@ public class TeachHomeworkController {
     @Operation(summary = "AI 创建作业")
     @PostMapping("/create/ai")
     @Transactional
-    public Result<?> createHWByAI(String msg){
+    public Result<?> createHWByAI(@RequestParam("msg") String msg,@RequestParam("subjectId") Integer subjectId){
         log.info("AI 创建作业");
-        return teachHomeworkService.createHWByAI(msg);
+        return teachHomeworkService.createHWByAI(msg,subjectId);
     }
 
     /**
@@ -141,13 +142,11 @@ public class TeachHomeworkController {
     /**
      * 查看所有待批改作业
      */
-    @Operation(summary = "查看所有待批改作业",description = "可选：page,size")
+    @Operation(summary = "查看所有待批改作业")
     @GetMapping("/uncorrect/sim/list")
-    public Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "5") int size){
-        log.info("查看待批改作业,page:{},size:{}",page,size);
-        return teachHomeworkService.queryUnCorSimList(page,size);
+    public Result<List<TeachUnCorrectSimHWVO>> queryUnCorSimList(){
+        log.info("查看待批改作业");
+        return teachHomeworkService.queryUnCorSimList();
     }
 
     /**
@@ -176,7 +175,17 @@ public class TeachHomeworkController {
     /**
      * 查看已批改作业列表
      */
-    @Operation(summary = "查看已批改作业列表",description = "传参：subjectId,homeworkId")
+    @Operation(summary = "查看已批改作业列表")
+    @GetMapping("/correct/sim/list")
+    public Result<List<CorrectSimpleVO>> queryCorSimList(){
+        log.info("查看已批改作业列表");
+        return teachHomeworkService.queryCorSimList();
+    }
+
+    /**
+     * 查看已批改作业详情
+     */
+    @Operation(summary = "查看已批改作业详情",description = "传参：subjectId,homeworkId")
     @GetMapping("/correct/list")
     public Result<List<CorrectVO>> queryCorrectList(
             @RequestParam("subjectId") Integer subjectId,

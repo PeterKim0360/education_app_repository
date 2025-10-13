@@ -63,7 +63,7 @@ public class StudentLearningPlanServiceImpl implements StudentLearningPlanServic
     private LearningPlan analyzeAndGeneratePlan(List<StuHomework> homeworkList) {
         if (homeworkList == null || homeworkList.isEmpty()) {
             log.info("作业列表为空，返回空学习计划");
-            return new LearningPlan(Collections.emptyList(), "暂无作业数据，无法生成学习计划");
+            return new LearningPlan(Collections.emptyList(), "暂无作业数据，无法生成学习计划","");
         }
 
         // 按科目分组计算平均分
@@ -102,7 +102,33 @@ public class StudentLearningPlanServiceImpl implements StudentLearningPlanServic
             // 计算建议学习时间（小时/周）
             int recommendedHours = calculateRecommendedHours(averageScore);
 
-            subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours));
+            switch (subject){
+                case "高等数学":{  subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours,
+                        "https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E5%9B%BE/%E9%AB%98%E6%95%B0.png"));
+                    break;
+                }
+                case "线性代数":{
+                    subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours,
+                                "https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E5%9B%BE/%E7%BA%BF%E4%BB%A3.png"));
+                    break;
+                }
+                case "大学物理":{
+                    subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours,
+                            "https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E5%9B%BE/%E5%A4%A7%E7%89%A9.png"));
+                    break;
+                }
+                case "JAVA程序设计":{
+                    subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours,
+                            "https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E5%9B%BE/JAVA.png"));
+                    break;
+                }
+                case "软件工程导论":{
+                    subjectAnalyses.add(new SubjectAnalysis(subject, averageScore, totalAssignments, suggestion, recommendedHours,
+                            "https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E5%9B%BE/%E8%BD%AF%E4%BB%B6.png"));
+                    break;
+                }
+            }
+
         }
 
         // 按平均分排序，低分在前
@@ -110,7 +136,9 @@ public class StudentLearningPlanServiceImpl implements StudentLearningPlanServic
 
         String overallSuggestion = generateOverallSuggestion(subjectAnalyses);
 
-        return new LearningPlan(subjectAnalyses, overallSuggestion);
+        String staticUrl="https://classroom-interaction.oss-cn-hangzhou.aliyuncs.com/%E4%BD%9C%E4%B8%9A/%E5%9B%BE.png";
+
+        return new LearningPlan(subjectAnalyses, overallSuggestion,staticUrl);
     }
 
     /**
@@ -124,13 +152,13 @@ public class StudentLearningPlanServiceImpl implements StudentLearningPlanServic
         String systemPrompt = "你是一位专业的学习规划大师，擅长根据学生的学习成绩提供个性化的学习建议和未来5天的规划。你的建议应该具体、实用，并且易于学生理解和执行。";
 
         // 构造用户提示
-        String userPrompt = String.format("学生在%s科目中的平均成绩为%.1f分（满分100分）。请根据这个成绩提供详细的学习建议，包括：\n" +
+        String userPrompt = String.format("学生在%s科目中的平均成绩为%.1f分（满分100分）。请根据这个成绩提供学习建议，包括：\n" +
                         "1. 对当前学习状况的简要评估\n" +
-                        "2. 2-3条具体可操作的学习改进建议\n" +
-                        "3. 推荐的学习方法或策略\n" +
+                        "2. 2-3条可操作的学习改进建议\n" +
+                        "3. 推荐的学习方法或策略，用序号展示\n" +
                         "4. 每周建议的学习时间安排和学习规划\n" +
-                        "5. 推荐相关教学视频或书籍" +
-                        "请用中文回复，语言简洁明了，适合中学生理解。不要使用markdown格式，直接返回纯文本。",
+                        "5. 推荐3个相关教学视频或书籍" +
+                        "请用中文回复，语言简洁明了，适合中学生理解，不要太详细。不要使用markdown格式，直接返回纯文本。",
                 subject, averageScore);
 
         try {

@@ -5,9 +5,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 import java.util.List;
-
 @Data
-public class TeachCreateHomeworkDTO {
+public class TeachEditHomeworkDTO {
+    private Long homeworkId;
     private Integer subjectId;
     private String homeworkName;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
